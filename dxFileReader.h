@@ -14,11 +14,15 @@
 #ifndef __DXFILEREADER_H
 #define __DXFILEREADER_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 // buffer sizes
 #define DX_MAX_FILENAME_LENGTH 256
 #define DX_MAX_TOKEN_LENGTH 32
 #define DX_COMMENT_LENGTH 256
-#define DX_READ_BUFFER_LENGTH 2048
+#define DX_READ_BUFFER_SIZE 2048
 
 // return codes
 #define DX_SUCCESS 1
@@ -53,7 +57,6 @@ typedef struct object_struct object;
 typedef struct attribute_struct attribute;
 typedef struct field_struct field;
 typedef struct array_struct array;
-typedef struct group_struct group;
 typedef struct group_struct group;
 
 /*DX data object*/
@@ -114,7 +117,7 @@ struct dxFile_struct{
 // function prototypes
 int DX_Open(dxFile *file,const char * filename);
 // helpers (should add to another library)
-int StringToken(char * buffer, char* token,int size)
-int NextToken(FILE *fp,char * buffer, int size)
-int ReadLine(FILE *fp,char *buffer,int size)
+int StringToken(char * buffer, char* token,int size);
+int NextToken(FILE *fp,char * buffer, int size);
+int ReadLine(FILE *fp,char *buffer,int size);
 #endif

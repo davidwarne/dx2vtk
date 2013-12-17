@@ -51,8 +51,8 @@
 typedef struct vtkDataFile_struct vtkDataFile;
 
 struct vtkDataFile_struct {
-    char[4] vtkVersion; /*header version*/
-    char[256] title; /**/
+    char vtkVersion[4]; /*header version*/
+    char title[256]; /**/
     unsigned char dataType; 
     unsigned char Geometry;
     void * dataset;

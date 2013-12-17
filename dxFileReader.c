@@ -1,6 +1,6 @@
-#include <dxFileReader.h>
+#include "dxFileReader.h"
 
-char *buffer[DX_READ_BUFFER_SIZE]
+char read_buf[DX_READ_BUFFER_SIZE];
 
 /**
  * @brief Opens an OpenDX file
@@ -32,15 +32,23 @@ int DX_Open(dxFile *file, const char * filename)
         return DX_FILE_NOT_FOUND_ERROR;
     }
 
+#ifdef DEBUG
+    printf("Reading file [%s]...\n",file->filename);
+#endif
+
     // first pass, coun the number of objects
     file->numObjects = 0;
-    while (NextToken(file->fp,read_buf,DX_READ_BUFFER_LENGTH) != -1)
+    while (NextToken(file->fp,read_buf,DX_READ_BUFFER_SIZE) == 0)
     {
         if (strcmp(read_buf,"object") == 0)
         {
             file->numObjects++;
         }
     }
+
+#ifdef DEBUG
+    printf("File contains %d objects\n",file->numObjects);
+#endif
 
     // second pass, read object headers
     file->objs = (object *)malloc((file->numObjects)*sizeof(object));
@@ -51,21 +59,29 @@ int DX_Open(dxFile *file, const char * filename)
 
     rewind(file->fp);
     i=0;
-    while (NextToken(file->fp,read_buf,DX_READ_BUFFER_LENGTH) != -1)
+    while (NextToken(file->fp,read_buf,DX_READ_BUFFER_SIZE) == 0)
     {
         if (strcmp(read_buf,"object") == 0)
         {
-            ReadLine(file,read_buf,DX_READ_BUFFER_LENGTH);
+            ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+#ifdef DEBUG
+            printf("Object %d %s\n",i,read_buf);
+#endif
+            i++;
             DX_ReadObjectHeader(&(file->objs[i]),read_buf);
         }
 
     }
 }
 
+// @todo Update this next
 int DX_ReadObjectHeader(object *obj, char* header)
 {
-   /*determine type and defer to a sub-function*/
-  char name[DX_MAX_TOKEN_LENGTH];
+    //determine type and defer to a sub-function
+    char name[DX_MAX_TOKEN_LENGTH];
+    //char buffer[DX_MAX_TOKEN]
+    StringToken(header,name,DX_MAX_TOKEN_LENGTH);
+
 
 }
 
@@ -73,23 +89,23 @@ int DX_ReadObjectHeader(object *obj, char* header)
  * @brief Imports object data into memory
  * @param object the dxobject to load data for
  */
-int DX_ImportComponent(dxobject *object, const char * options)
+/*int DX_ImportComponent(dxobject *object, const char * options)
 {
-}
+}*/
 
 /**
  * @brief Frees memory consumed by the objects data.
  * @param object the dxobject to clean the data of.
  */
-int DX_CleanObject(dxobject *object)
+/*int DX_CleanObject(dxobject *object)
 {
-}
+}*/
 
 /**
  * @brief Closes the OpenDX file handle
  * @param file the OpenDX file to close
  */
-int DX_Close(dxfile * file)
+/*int DX_Close(dxfile * file)
 {
     if (file != NULL)
     {
@@ -99,7 +115,7 @@ int DX_Close(dxfile * file)
     {
         return DX_NULL_POINTER; 
     }
-}
+}*/
 
 #define S_TRIM 1
 #define S_COMMENT 2
@@ -123,7 +139,7 @@ int DX_Close(dxfile * file)
 int StringToken(char * buffer, char* token,int size)
 {
     char c;
-    uint8_t state;
+    unsigned char state;
     int index;
     static char *buf = NULL;
     static int pos = 0;
@@ -149,8 +165,13 @@ int StringToken(char * buffer, char* token,int size)
                     case '\t':
                         state = S_TRIM;
                         break;
+                    case '"':
+                        state = S_STRING;
+                        break;
                     default:
                         state = S_TOKEN;
+                        buf[index] = c;
+                        index++;
                         break;
                 }
                 break;
@@ -207,7 +228,7 @@ int StringToken(char * buffer, char* token,int size)
 int NextToken(FILE *fp,char * buffer, int size)
 {
     char c;
-    uint8_t state;
+    unsigned char state;
     int index;
     index = 0;
     state = S_TRIM;
@@ -230,8 +251,13 @@ int NextToken(FILE *fp,char * buffer, int size)
                     case EOF:
                         state = S_EOF;
                         break;
+                    case '"':
+                        state = S_STRING;
+                        break;
                     default:
                         state = S_TOKEN;
+                        buffer[index] = c;
+                        index++;
                         break;
                 }
                 break;
@@ -284,8 +310,7 @@ int NextToken(FILE *fp,char * buffer, int size)
                 break;
         }
     }
-    
-    return (state != S_DONE);
+    return (state == S_EOF);
 }
 
 /**
@@ -307,6 +332,7 @@ int ReadLine(FILE *fp,char *buffer,int size)
     {
         buffer[index] = c;
         index++;
+        c = fgetc(fp);
     }
     buffer[index] = '\0';
     return (c == EOF);
