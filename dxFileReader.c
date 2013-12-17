@@ -104,7 +104,7 @@ int DX_ReadObjectHeader(object *obj, char* header)
         {
             if (strcmp(buffer,"type") == 0)
             {
-                
+                rc = StringToken(NULL,buffer)    
             }
             else if(strcmp(buffer,"category") == 0)
             {
@@ -182,11 +182,13 @@ int DX_ReadObjectHeader(object *obj, char* header)
  * process continues.
  * @param token the ouput buffer for the next token.
  * @param size the size of the token buffer.
- * @retVal 0 The State machine terminated at an accepting state, 
- * and token stores a valid token.
- * @retVal 1 The state machine terminated in a non-accepting state.
+ * @returns the pointer to the unprocessed protion of the buffer, or
+ * NULL if no buffer has been initialised or the end of buffer is reached.
+ * @warning This code uses the null-termination character to determine the end
+ * of the buffer. The behaviour is undefined if the buffer does not contain 
+ * this character.
  */
-int StringToken(char * buffer, char* token,int size)
+char * StringToken(char * buffer, char* token,int size)
 {
     char c;
     unsigned char state;
@@ -198,6 +200,11 @@ int StringToken(char * buffer, char* token,int size)
     {
         pos = 0;
         buf = buffer;
+    }
+
+    if (buf == NULL)
+    {
+        return NULL;
     }
     
     index = 0;
@@ -218,6 +225,10 @@ int StringToken(char * buffer, char* token,int size)
                     case '"':
                         state = S_STRING;
                         break;
+                    case '\0':
+                        token[index] = '\0';
+                        state = S_DONE;
+                        break;
                     default:
                         state = S_TOKEN;
                         buf[index] = c;
@@ -234,6 +245,7 @@ int StringToken(char * buffer, char* token,int size)
                     case ' ':
                     case '\t':
                     case '\n':
+                    case '\0':
                         token[index] = '\0';
                         state = S_DONE;
                         break;
@@ -246,6 +258,7 @@ int StringToken(char * buffer, char* token,int size)
             case S_STRING: // reading a string
                 switch (c)
                 {
+                    case '\0':
                     case '"':
                         token[index] = '\0';
                         state = S_DONE;
@@ -258,9 +271,8 @@ int StringToken(char * buffer, char* token,int size)
                 break;
         }
     }
-    
-    return (state != S_DONE);
 
+    return  (c == '\0') NULL : buf + pos;
 }
 
 /**
