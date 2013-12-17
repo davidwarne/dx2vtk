@@ -74,15 +74,65 @@ int DX_Open(dxFile *file, const char * filename)
     }
 }
 
-// @todo Update this next
+/**
+ * @brief Exracts the object header information from the header line
+ */
 int DX_ReadObjectHeader(object *obj, char* header)
 {
     //determine type and defer to a sub-function
     char name[DX_MAX_TOKEN_LENGTH];
-    //char buffer[DX_MAX_TOKEN]
-    StringToken(header,name,DX_MAX_TOKEN_LENGTH);
-
-
+    char buffer[DX_MAX_TOKEN_LENGTH];
+    int rc;
+    unsigned char state;
+   
+    // object name/id
+    StringToken(header,buffer,DX_MAX_TOKEN_LENGTH);
+    strncpy(name,buffer,DX_MAX_TOKEN_LENGTH);
+    // next token must be class
+    StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+    if (strcmp(buffer,"class") != 0)
+    {
+        return DX_INVALID_FILE_ERROR;    
+    }
+    // get the class type
+    StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+    if (strcmp(buffer,"array") == 0)
+    {
+        obj->class = DX_ARRAY;
+        rc = StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        while (rc == 0)
+        {
+            if (strcmp(buffer,"type") == 0)
+            {
+                
+            }
+            else if(strcmp(buffer,"category") == 0)
+            {
+            }
+            else if (strcmp(buffer,"rank") == 0)
+            {
+            }
+            else if (strcmp(buffer,"shape") == 0)
+            {
+            }
+            else if (strcmp(buffer,"items") == 0)
+            {
+            }
+            rc = StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        }
+    }
+    else if (strcmp(buffer,"field") == 0)
+    {
+        obj->class = DX_FIELD;
+    }
+    else if (strcmp(buffer,"group") == 0)
+    {
+        obj->class = DX_GROUP;
+    }
+    else
+    {
+        return DX_INVALID_FILE_ERROR;
+    }
 }
 
 /**
