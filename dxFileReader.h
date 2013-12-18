@@ -43,6 +43,8 @@
 #define DX_GRIDCONNECTIONS 9
 #define DX_GROUP 10
 
+#define DX_MAX_RANK 10
+
 // data types
 #define DX_INT 0
 #define DX_FLOAT 1
@@ -50,6 +52,15 @@
 // data categories
 #define DX_REAL 0
 #define DX_COMPLEX 1
+
+#define DX_LSB 0
+#define DX_MSB 1
+
+#define DX_TEXT 0
+#define DX_IEEE 1
+#define DX_BINARY 2
+#define DX_ASCII 3
+
 
 // type defs
 typedef struct dxFile_struct dxFile;
@@ -62,18 +73,20 @@ typedef struct group_struct group;
 /*DX data object*/
 struct object_struct{
     unsigned char class;
+    char name[DX_MAX_TOKEN_LENGTH];
+    int number;
     void *obj; // pointer to actual class instance
 };
 
 struct array_struct{
     unsigned char type;
     unsigned char category;
-    unsigned char rank;
-    unsigned char shape;
-    unsigned char items;
+    int rank;
+    int shape[DX_MAX_RANK];
+    int items;
     unsigned char endian;
-    unsigned int dataType;
-    unsigned int dataMode;
+    unsigned char dataType;
+    unsigned char dataMode;
     void *data;
     int numAttributes;
     object *attributes;

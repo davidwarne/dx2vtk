@@ -82,12 +82,15 @@ int DX_ReadObjectHeader(object *obj, char* header)
     //determine type and defer to a sub-function
     char name[DX_MAX_TOKEN_LENGTH];
     char buffer[DX_MAX_TOKEN_LENGTH];
+    char *ptr;
     int rc;
     unsigned char state;
    
     // object name/id
     StringToken(header,buffer,DX_MAX_TOKEN_LENGTH);
     strncpy(name,buffer,DX_MAX_TOKEN_LENGTH);
+    obj->number = atoi(name);
+    strncpy(obj->name,name,DX_MAX_TOKEN_LENGTH);
     // next token must be class
     StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
     if (strcmp(buffer,"class") != 0)
@@ -95,31 +98,11 @@ int DX_ReadObjectHeader(object *obj, char* header)
         return DX_INVALID_FILE_ERROR;    
     }
     // get the class type
-    StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+    ptr = StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
     if (strcmp(buffer,"array") == 0)
     {
         obj->class = DX_ARRAY;
-        rc = StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
-        while (rc == 0)
-        {
-            if (strcmp(buffer,"type") == 0)
-            {
-                rc = StringToken(NULL,buffer)    
-            }
-            else if(strcmp(buffer,"category") == 0)
-            {
-            }
-            else if (strcmp(buffer,"rank") == 0)
-            {
-            }
-            else if (strcmp(buffer,"shape") == 0)
-            {
-            }
-            else if (strcmp(buffer,"items") == 0)
-            {
-            }
-            rc = StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
-        }
+        ReadArrayHeader(obj,ptr);
     }
     else if (strcmp(buffer,"field") == 0)
     {
@@ -133,6 +116,80 @@ int DX_ReadObjectHeader(object *obj, char* header)
     {
         return DX_INVALID_FILE_ERROR;
     }
+}
+int ReadArrayHeader(char * name, object *obj,char *header)
+{
+    char buffer[DX_MAX_TOKEN_LENGTH];
+    array *data;
+
+    // allocate memory for new array
+    data = (array *)malloc(sizeof(array));
+    if (data == NULL)
+    {
+        return DX_MEMORY_ERROR; 
+    }
+
+    StringToken(header,buffer,DX_MAX_TOKEN_LENGTH);
+    do 
+    {
+        if (strcmp(buffer,"type") == 0)
+        {
+            StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+            // TODO: extend as needed
+            if (strcmp(buffer,"float") == 0)
+            {
+                data->type = DX_FLOAT;
+            }
+            else 
+            {
+                data->type = DX_INT;
+            }
+        }
+        else if (strcmp(buffer,"category") == 0)
+        {
+            StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+            if (strcmp(buffer,"real") == 0)
+            {
+                data->category = DX_REAL;
+            }
+            else 
+            {
+                data->category = DX_COMPLEX;
+            }
+        }
+        else if (strcmp(buffer,"rank") == 0)
+        {
+            StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+            data->rank = atoi(buffer);
+        }
+        else if (strcmp(buffer,"shape") == 0)
+        {
+            for (int i=0;i<(data->rank);i++)
+            {
+                StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+                data->shape[i] = atoi(buffer);
+            }
+        }
+        else if (strcmp(buffer,"items") == 0)
+        {
+            StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+            data->items = atoi(buffer);
+            
+            StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+            if (strcmp(buffer,"msb") == 0)
+            {
+                data->endian = DX_MSB;
+            }
+            else if (strcmp(buffer,"lsb") == 0)
+            {
+                data->endian = DX_LSB;
+            }
+            
+            StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+            
+        }
+            
+    } while(StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH != NULL));
 }
 
 /**
