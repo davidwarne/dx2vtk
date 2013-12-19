@@ -152,7 +152,7 @@ int DX_LoadAll(dxFile *file)
     for (i=0;i<(file->numObjects);i++)
     {
         fsetpos(file->fp,&(file->objs[i].pos));
-        rc = LoadObjectData(&(file->objs[i]),file)
+        rc = LoadObjectData(&(file->objs[i]),file);
         if (rc != DX_SUCCESS)
         {
             return rc;
@@ -400,20 +400,20 @@ int LoadFieldData(object *obj, dxFile *file)
     // count number of components and return start
     fgetpos(file->fp,&pos);
     ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
-    StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH)
+    StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
     while(!streq(buffer,"component"))
     {
         data->numComponents++;
         ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
-        StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH)
+        StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
     }
     fsetpos(file->fp,&pos);
 
     // allocate memory for the component pointers
-    data->components = (objects **)malloc((data->numComponents)*sizeof(object *));
+    data->components = (object **)malloc((data->numComponents)*sizeof(object *));
     if (data->components == NULL)
     {
-        return DX_MEMOY_ERROR;
+        return DX_MEMORY_ERROR;
     }
     // set to null
     for (i=0;i<(data->numComponents);i++)
@@ -444,7 +444,7 @@ int LoadFieldData(object *obj, dxFile *file)
             if (streq(file->objs[j].name,ref))
             {
                 // store the pointer
-                data->component[i] = &(file->objs[j]);
+                data->components[i] = &(file->objs[j]);
             }
         }
 
@@ -472,31 +472,31 @@ int LoadGroupData(object *obj,dxFile *file)
 {    
     fpos_t pos;
     int i,j;
-    field *data;
+    group *data;
     char buffer[DX_MAX_TOKEN_LENGTH];
     char alias[DX_MAX_TOKEN_LENGTH];
     char ref[DX_MAX_TOKEN_LENGTH];
     
-    data = (field *)(obj->obj);
+    data = (group *)(obj->obj);
     data->numMembers = 0;
 
     // count number of members and return start
     fgetpos(file->fp,&pos);
     ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
-    StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH)
+    StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
     while(!streq(buffer,"member"))
     {
         data->numMembers++;
         ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
-        StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH)
+        StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
     }
     fsetpos(file->fp,&pos);
 
     // allocate memory for the member pointers
-    data->members = (objects **)malloc((data->numMembers)*sizeof(object *));
+    data->members = (object **)malloc((data->numMembers)*sizeof(object *));
     if (data->members == NULL)
     {
-        return DX_MEMOY_ERROR;
+        return DX_MEMORY_ERROR;
     }
     // set to null
     for (i=0;i<(data->numMembers);i++)
@@ -527,7 +527,7 @@ int LoadGroupData(object *obj,dxFile *file)
             if (streq(file->objs[j].name,ref))
             {
                 // store the pointer
-                data->member[i] = &(file->objs[j]);
+                data->members[i] = &(file->objs[j]);
             }
         }
 
@@ -552,40 +552,45 @@ int LoadGroupData(object *obj,dxFile *file)
  * @returns DX_SUCCESS on compeletion, otherwise an appropriate error message
  * @todo Currently only supports data mode follows
  */
-int LoadArraydata(object *obj,dxFile *file)
+int LoadArrayData(object *obj,dxFile *file)
 {
     size_t size;
+    int i;
+    array *data;
 
-    size = (obj->rank)*(obj->shape)*(obj->items);
-    
-    switch(obj->dataMode)
+    data = (array *)(obj->obj);
+    size = (data->items);
+    for (i=0;i<(data->rank);i++)
     {
-        case default:
+        size *= (data->shape[i]);
+    }
+    
+    switch(data->dataMode)
+    {
+        default:
         case DX_FOLLOWS:
-            switch(obj->type)
+            switch(data->type)
             {
                 case DX_FLOAT: // load float data
                 {
-                    int i;
                     float *dataf;
                     dataf = (float *)malloc(size*sizeof(float));
                     for (i=0;i<size;i++)
                     {
                         fscanf(file->fp,"%f",dataf+i);
                     }
-                    obj->data (void*)dataf;
+                    data->data = (void*)dataf;
                     break;
                 }
                 case DX_INT: // load int data
                 {
-                    int i;
                     int *datai;
                     datai = (int *)malloc(size*sizeof(int));
                     for (i=0;i<size;i++)
                     {
                         fscanf(file->fp,"%f",datai+i);
                     }
-                    obj->data (void*)datai;
+                    data->data = (void*)datai;
                     break;
                 }
 

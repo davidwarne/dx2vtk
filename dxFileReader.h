@@ -118,7 +118,7 @@ struct field_struct{
     object **components;
 };
 
-struct groups_struct{
+struct group_struct{
     int numMembers;
     object **members;
 };

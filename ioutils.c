@@ -15,7 +15,7 @@
  * of the buffer. The behaviour is undefined if the buffer does not contain 
  * this character.
  */
-char * StringToken(const char * buffer, char* token,int size)
+const char * StringToken(const char * buffer, char* token,int size)
 {
     char c;
     unsigned char state;

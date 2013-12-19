@@ -11,7 +11,7 @@
 #define S_TOKEN 4
 #define S_DONE 5
 #define S_STRING 6
-char * StringToken(const char * buffer, char* token,int size);
+const char * StringToken(const char * buffer, char* token,int size);
 int NextToken(FILE *fp,char * buffer, int size);
 int ReadLine(FILE *fp,char *buffer,int size);
 #endif
