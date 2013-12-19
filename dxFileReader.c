@@ -6,7 +6,7 @@ char read_buf[DX_READ_BUFFER_SIZE];
  * @brief Opens an OpenDX file
  * @details reads through the file finding all objects and populating object descriptors. No data is actually loaded into memory.
  * @param filename The name of the OpenDX file
- * @returns a pointer to a valid dxfile struct, NULL if an error occurred.
+ * @returns DX_SUCCESS on compeletion, otherwise an appropriate error message
  */
 int DX_Open(dxFile *file, const char * filename)
 {
@@ -68,6 +68,8 @@ int DX_Open(dxFile *file, const char * filename)
             printf("HEADER %d %s\n",i,read_buf);
 #endif
             i++;
+            // get the cursor position
+            fgetpos(file->fp,&(file->objs[i].pos));
             DX_ParseObjectHeader(&(file->objs[i]),read_buf);
 #ifdef DEBUG
             printf("Class: %hhu\n",file->objs[i].class);
@@ -96,6 +98,67 @@ int DX_Open(dxFile *file, const char * filename)
         }
 
     }
+
+}
+
+/**
+ * @brief Re-opens file handle without reloading headers.
+ * @param file the dxFile to re-load
+ * @returns DX_SUCCESS on compeletion, otherwise an appropriate error message
+ */
+int DX_Reopen(dxFile *file)
+{
+    // check the dxFile is valid
+    if (file == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
+    file->fp = fopen(file->filename,"r");
+    if (file->fp == NULL)
+    {
+        return DX_FILE_NOT_FOUND_ERROR;
+    }
+    return DX_SUCCESS;
+}
+
+/**
+ * @brief closes file handle
+ * @details All data is still contained in the dxFile object, to open the file
+ * again without wiping current contents use DX_Reopen().
+ * @param file the dxFile structure
+ * @returns DX_SUCCESS on compeletion, otherwise an appropriate error message
+ */
+int DX_Close(dxFile *file)
+{
+    // check the dxFile is valid
+    if (file == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
+    fclose(file->fp);
+}
+
+/**
+ * @brief loads objects into memory
+ * @details works through each object header and import data appropiately
+ * making links were appropriate.
+ * @param file the file to load data from
+ * @returns DX_SUCCESS on compeletion, otherwise an appropriate error message
+ */
+int DX_LoadAll(dxFile *file)
+{
+    int i;
+    int rc;
+    for (i=0;i<(file->numObjects);i++)
+    {
+        fsetpos(file->fp,&(file->objs[i].pos));
+        rc = LoadObjectData(&(file->objs[i]),file)
+        if (rc != DX_SUCCESS)
+        {
+            return rc;
+        }
+    }
+    return DX_SUCCESS;
 }
 
 /**
@@ -274,6 +337,41 @@ int ParseArrayObjectHeader(char * name, object *obj,const char *header)
 
     obj->obj = (void *)data;
     obj->isLoaded = 0;
+    return DX_SUCCESS;
+}
+
+/**
+ * @brief loads object data
+ * @details loads data via appropriate sub-function, then imports attributes
+ * and asserts isLoaded flag.
+ * @param obj a pointer to the object to load
+ * @param file the dxFile to load from
+ * @returns DX_SUCCESS on compeletion, otherwise an appropriate error message
+ */
+int LoadObjectData(object *obj,dxFile * file)
+{
+    int rc;
+    // load data from file
+    switch(obj->class)
+    {
+        case DX_ARRAY:
+            rc = LoadArrayData(obj,file);
+            break;
+        case DX_FIELD:
+            rc = LoadFieldData(obj,file);
+            break;
+        case DX_GROUP:
+            rc = LoadGroupData(obj,file);
+            break;
+    }
+
+    if (rc != DX_SUCCESS)
+    {
+        return rc;
+    }
+    
+    // TODO: get the attributes, but for now ignore
+    obj->isLoaded = 1;
     return DX_SUCCESS;
 }
 

@@ -86,6 +86,7 @@ struct object_struct{
     void *obj; // pointer to actual class instance
     int numAttributes;
     object *attributes;
+    fpos_t pos; // cursor pos after header
 };
 
 struct array_struct{
@@ -134,7 +135,7 @@ int DX_Open(dxFile *file,const char * filename);
 int DX_LoadAll(dxFile *file);
 int ParseObjectHeader(object *obj, const char* header);
 int ParseArrayObjectHeader(char * name, object *obj,const char *header);
-int LoadData(object *obj,dxFile *file);
+int LoadObjectData(object *obj,dxFile *file);
 int LoadArrayData(object *obj,dxFile *file);
 int LoadFieldData(object *obj,dxFile *file);
 int LoadGroupData(object *obj,dxFile *file);
