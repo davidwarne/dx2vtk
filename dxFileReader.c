@@ -152,6 +152,11 @@ int DX_ParseObjectHeader(object *obj, const char* header)
 
 /**
  * @brief Parses an array object header
+ * @param name The id of the object as parsed by ParseObjectHeader()
+ * @param obj a pointer to the object wrapper that will hold this array
+ * @param header the pointer to header line starting from type
+ * @returns DX_SUCCESS if successfully complete, otherwise an appropriate
+ * error code
  */
 int ParseArrayObjectHeader(char * name, object *obj,const char *header)
 {
@@ -272,3 +277,227 @@ int ParseArrayObjectHeader(char * name, object *obj,const char *header)
     return DX_SUCCESS;
 }
 
+/**
+ * @brief load field data
+ * @details locates the components it the object array, assigns an alias
+ * to each and stores the pointer to associate the objects with the field.
+ * @param obj the object pointer which wraps the field.
+ * @param file the dxFile structure, assumes the stream cursor is located just
+ * after the field header.
+ * @returns DX_SUCCESS on compeletion, otherwise an appropriate error message
+ * @note This loader assumes all references are in the same dx file
+ */
+int LoadFieldData(object *obj, dxFile *file)
+{
+    fpos_t pos;
+    int i,j;
+    field *data;
+    char buffer[DX_MAX_TOKEN_LENGTH];
+    char alias[DX_MAX_TOKEN_LENGTH];
+    char ref[DX_MAX_TOKEN_LENGTH];
+    
+    data = (field *)(obj->obj);
+    data->numComponents = 0;
+
+    // count number of components and return start
+    fgetpos(file->fp,&pos);
+    ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+    StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH)
+    while(!streq(buffer,"component"))
+    {
+        data->numComponents++;
+        ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+        StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH)
+    }
+    fsetpos(file->fp,&pos);
+
+    // allocate memory for the component pointers
+    data->components = (objects **)malloc((data->numComponents)*sizeof(object *));
+    if (data->components == NULL)
+    {
+        return DX_MEMOY_ERROR;
+    }
+    // set to null
+    for (i=0;i<(data->numComponents);i++)
+    {
+        data->components[i] = NULL;
+    }
+
+    // now parse component data and link to objects
+    for (i=0;i<(data->numComponents);i++)
+    {
+        // read the line
+        ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+        // read component
+        StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
+        // get component alias
+        StringToken(NULL,alias,DX_MAX_TOKEN_LENGTH);
+        // read reference
+        StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        if (streq(buffer,"value"))
+        {
+            StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        }
+        StringToken(NULL,ref,DX_MAX_TOKEN_LENGTH);
+        
+        // find the object referenced 
+        for (j=0;j<(file->numObjects);j++)
+        {
+            if (streq(file->objs[j].name,ref))
+            {
+                // store the pointer
+                data->component[i] = &(file->objs[j]);
+            }
+        }
+
+        if (data->components[i] == NULL)
+        {
+            return DX_INVALID_FILE_ERROR;
+        }
+
+        strncpy(data->components[i]->alias,alias,DX_MAX_TOKEN_LENGTH);
+    }
+
+    return DX_SUCCESS;
+}
+
+/**
+ * @brief loads group data
+ * @details locates the members it the object array, assigns an alias
+ * to each and stores the pointer to associate the objects with the group.
+ * @param obj the object pointer which wraps the group.
+ * @param file the dxFile structure, assumes the stream cursor is located just
+ * after the group header.
+ * @returns DX_SUCCESS on compeletion, otherwise an appropriate error message
+ */
+int LoadGroupData(object *obj,dxFile *file)
+{    
+    fpos_t pos;
+    int i,j;
+    field *data;
+    char buffer[DX_MAX_TOKEN_LENGTH];
+    char alias[DX_MAX_TOKEN_LENGTH];
+    char ref[DX_MAX_TOKEN_LENGTH];
+    
+    data = (field *)(obj->obj);
+    data->numMembers = 0;
+
+    // count number of members and return start
+    fgetpos(file->fp,&pos);
+    ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+    StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH)
+    while(!streq(buffer,"member"))
+    {
+        data->numMembers++;
+        ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+        StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH)
+    }
+    fsetpos(file->fp,&pos);
+
+    // allocate memory for the member pointers
+    data->members = (objects **)malloc((data->numMembers)*sizeof(object *));
+    if (data->members == NULL)
+    {
+        return DX_MEMOY_ERROR;
+    }
+    // set to null
+    for (i=0;i<(data->numMembers);i++)
+    {
+        data->members[i] = NULL;
+    }
+
+    // now parse member data and link to objects
+    for (i=0;i<(data->numMembers);i++)
+    {
+        // read the line
+        ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+        // read member
+        StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
+        // get member alias
+        StringToken(NULL,alias,DX_MAX_TOKEN_LENGTH);
+        // read reference
+        StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        if (streq(buffer,"value"))
+        {
+            StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        }
+        StringToken(NULL,ref,DX_MAX_TOKEN_LENGTH);
+        
+        // find the object referenced 
+        for (j=0;j<(file->numObjects);j++)
+        {
+            if (streq(file->objs[j].name,ref))
+            {
+                // store the pointer
+                data->member[i] = &(file->objs[j]);
+            }
+        }
+
+        if (data->members[i] == NULL)
+        {
+            return DX_INVALID_FILE_ERROR;
+        }
+
+        strncpy(data->members[i]->alias,alias,DX_MAX_TOKEN_LENGTH);
+    }
+
+    return DX_SUCCESS;
+
+}
+
+/**
+ * @brief loads array data
+ * @details allocates memory and loads data array into memory
+ * @param obj the pointer which wraps the array object
+ * @param file the dxFile structure, assumes the stream cursor is located just
+ * after the array header.
+ * @returns DX_SUCCESS on compeletion, otherwise an appropriate error message
+ * @todo Currently only supports data mode follows
+ */
+int LoadArraydata(object *obj,dxFile *file)
+{
+    size_t size;
+
+    size = (obj->rank)*(obj->shape)*(obj->items);
+    
+    switch(obj->dataMode)
+    {
+        case default:
+        case DX_FOLLOWS:
+            switch(obj->type)
+            {
+                case DX_FLOAT: // load float data
+                {
+                    int i;
+                    float *dataf;
+                    dataf = (float *)malloc(size*sizeof(float));
+                    for (i=0;i<size;i++)
+                    {
+                        fscanf(file->fp,"%f",dataf+i);
+                    }
+                    obj->data (void*)dataf;
+                    break;
+                }
+                case DX_INT: // load int data
+                {
+                    int i;
+                    int *datai;
+                    datai = (int *)malloc(size*sizeof(int));
+                    for (i=0;i<size;i++)
+                    {
+                        fscanf(file->fp,"%f",datai+i);
+                    }
+                    obj->data (void*)datai;
+                    break;
+                }
+
+                    break;
+            }
+            break;
+        case DX_OFFSET:
+            break;
+        case DX_FILE:
+            break;
+    }
+    return DX_SUCCESS;
+}

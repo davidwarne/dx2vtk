@@ -79,10 +79,13 @@ typedef struct group_struct group;
 /*DX data object*/
 struct object_struct{
     unsigned char class;
+    char alias[DX_MAX_TOKEN_LENGTH];
     char name[DX_MAX_TOKEN_LENGTH];
     int number;
     unsigned char isLoaded;
     void *obj; // pointer to actual class instance
+    int numAttributes;
+    object *attributes;
 };
 
 struct array_struct{
@@ -97,8 +100,6 @@ struct array_struct{
     char file[DX_MAX_TOKEN_LENGTH];
     int offset;
     void *data;
-    int numAttributes;
-    object *attributes;
 };
 
 struct attribute_struct{
@@ -112,21 +113,13 @@ struct attribute_struct{
 };
 
 struct field_struct{
-    char name[DX_MAX_TOKEN_LENGTH];
-    int value;
     int numComponents;
-    int numAttributes;
-    object *components;
-    object *attributes;
+    object **components;
 };
 
 struct groups_struct{
-    char name[DX_MAX_TOKEN_LENGTH];
-    int value;
     int numMembers;
-    int numAttributes;
-    object *members;
-    object *attributes;
+    object **members;
 };
 
 struct dxFile_struct{
@@ -138,6 +131,11 @@ struct dxFile_struct{
 
 // function prototypes
 int DX_Open(dxFile *file,const char * filename);
-int DX_ParseObjectHeader(object *obj, const char* header);
+int DX_LoadAll(dxFile *file);
+int ParseObjectHeader(object *obj, const char* header);
 int ParseArrayObjectHeader(char * name, object *obj,const char *header);
+int LoadData(object *obj,dxFile *file);
+int LoadArrayData(object *obj,dxFile *file);
+int LoadFieldData(object *obj,dxFile *file);
+int LoadGroupData(object *obj,dxFile *file);
 #endif

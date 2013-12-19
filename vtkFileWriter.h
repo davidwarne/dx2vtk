@@ -82,14 +82,6 @@ struct rectilinearGrid_struct{
     float *Z_coordinates;
 };
 
-/*
-struct polydata_struct {
-    int numPoints;
-    float *points;
-    int
-
-};
-*/
 
 struct unstructuredGrid_struct{
     int numPoints;
