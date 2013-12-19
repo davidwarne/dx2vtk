@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ioutils.h"
 
 // buffer sizes
 #define DX_MAX_FILENAME_LENGTH 256
@@ -61,6 +62,11 @@
 #define DX_BINARY 2
 #define DX_ASCII 3
 
+#define DX_OFFSET 0
+#define DX_FILE 1
+#define DX_FOLLOWS 2
+
+#define streq(a,b) (strcmp((a),(b)) == 0)
 
 // type defs
 typedef struct dxFile_struct dxFile;
@@ -75,6 +81,7 @@ struct object_struct{
     unsigned char class;
     char name[DX_MAX_TOKEN_LENGTH];
     int number;
+    unsigned char isLoaded;
     void *obj; // pointer to actual class instance
 };
 
@@ -87,6 +94,8 @@ struct array_struct{
     unsigned char endian;
     unsigned char dataType;
     unsigned char dataMode;
+    char file[DX_MAX_TOKEN_LENGTH];
+    int offset;
     void *data;
     int numAttributes;
     object *attributes;
@@ -129,8 +138,6 @@ struct dxFile_struct{
 
 // function prototypes
 int DX_Open(dxFile *file,const char * filename);
-// helpers (should add to another library)
-int StringToken(char * buffer, char* token,int size);
-int NextToken(FILE *fp,char * buffer, int size);
-int ReadLine(FILE *fp,char *buffer,int size);
+int DX_ParseObjectHeader(object *obj, const char* header);
+int ParseArrayObjectHeader(char * name, object *obj,const char *header);
 #endif

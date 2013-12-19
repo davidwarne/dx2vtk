@@ -40,7 +40,7 @@ int DX_Open(dxFile *file, const char * filename)
     file->numObjects = 0;
     while (NextToken(file->fp,read_buf,DX_READ_BUFFER_SIZE) == 0)
     {
-        if (strcmp(read_buf,"object") == 0)
+        if (streq(read_buf,"object"))
         {
             file->numObjects++;
         }
@@ -61,23 +61,53 @@ int DX_Open(dxFile *file, const char * filename)
     i=0;
     while (NextToken(file->fp,read_buf,DX_READ_BUFFER_SIZE) == 0)
     {
-        if (strcmp(read_buf,"object") == 0)
+        if (streq(read_buf,"object"))
         {
             ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
 #ifdef DEBUG
-            printf("Object %d %s\n",i,read_buf);
+            printf("HEADER %d %s\n",i,read_buf);
 #endif
             i++;
-            DX_ReadObjectHeader(&(file->objs[i]),read_buf);
+            DX_ParseObjectHeader(&(file->objs[i]),read_buf);
+#ifdef DEBUG
+            printf("Class: %hhu\n",file->objs[i].class);
+            printf("name: %s ,",file->objs[i].name);
+            printf("number: %d\n",file->objs[i].number);
+            printf("Loaded: %hhu\n",file->objs[i].isLoaded);
+            if (file->objs[i].class == DX_ARRAY)
+            {
+                int j;
+                array *data = (array*)(file->objs[i].obj);
+                printf("\ttype: %hhu\n",data->type);
+                printf("\tcategory: %hhu\n",data->category);
+                printf("\trank: %d\n",data->rank);
+                printf("\tshape:");
+                for (j = 0;j<(data->rank);j++)
+                {
+                    printf(" %d",data->shape[j]);
+                }
+                printf("\n");
+                printf("\titems: %d\n",data->items);
+                printf("\tmode: %hhu\n",data->dataMode);
+
+
+            }
+#endif
         }
 
     }
 }
 
 /**
- * @brief Exracts the object header information from the header line
+ * @brief Parses an object header
+ * @details This just tests what type of object it is and differs to an
+ * object specific parser. On successful execution, the object header 
+ * information will be set.
+ * @param obj a pointer to an object wrapper
+ * @param header the header text line
+ * @returns DX_SUCCESS or an appropiate error code
  */
-int DX_ReadObjectHeader(object *obj, char* header)
+int DX_ParseObjectHeader(object *obj, const char* header)
 {
     //determine type and defer to a sub-function
     char name[DX_MAX_TOKEN_LENGTH];
@@ -93,22 +123,22 @@ int DX_ReadObjectHeader(object *obj, char* header)
     strncpy(obj->name,name,DX_MAX_TOKEN_LENGTH);
     // next token must be class
     StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
-    if (strcmp(buffer,"class") != 0)
+    if (!streq(buffer,"class"))
     {
         return DX_INVALID_FILE_ERROR;    
     }
     // get the class type
     ptr = StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
-    if (strcmp(buffer,"array") == 0)
+    if (streq(buffer,"array"))
     {
         obj->class = DX_ARRAY;
-        ReadArrayHeader(obj,ptr);
+        ParseArrayObjectHeader(name,obj,ptr);
     }
-    else if (strcmp(buffer,"field") == 0)
+    else if (streq(buffer,"field"))
     {
         obj->class = DX_FIELD;
     }
-    else if (strcmp(buffer,"group") == 0)
+    else if (streq(buffer,"group"))
     {
         obj->class = DX_GROUP;
     }
@@ -116,8 +146,14 @@ int DX_ReadObjectHeader(object *obj, char* header)
     {
         return DX_INVALID_FILE_ERROR;
     }
+
+    return DX_SUCCESS;
 }
-int ReadArrayHeader(char * name, object *obj,char *header)
+
+/**
+ * @brief Parses an array object header
+ */
+int ParseArrayObjectHeader(char * name, object *obj,const char *header)
 {
     char buffer[DX_MAX_TOKEN_LENGTH];
     array *data;
@@ -132,11 +168,11 @@ int ReadArrayHeader(char * name, object *obj,char *header)
     StringToken(header,buffer,DX_MAX_TOKEN_LENGTH);
     do 
     {
-        if (strcmp(buffer,"type") == 0)
+        if (streq(buffer,"type"))
         {
             StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
             // TODO: extend as needed
-            if (strcmp(buffer,"float") == 0)
+            if (streq(buffer,"float"))
             {
                 data->type = DX_FLOAT;
             }
@@ -145,10 +181,10 @@ int ReadArrayHeader(char * name, object *obj,char *header)
                 data->type = DX_INT;
             }
         }
-        else if (strcmp(buffer,"category") == 0)
+        else if (streq(buffer,"category"))
         {
             StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
-            if (strcmp(buffer,"real") == 0)
+            if (streq(buffer,"real"))
             {
                 data->category = DX_REAL;
             }
@@ -157,302 +193,82 @@ int ReadArrayHeader(char * name, object *obj,char *header)
                 data->category = DX_COMPLEX;
             }
         }
-        else if (strcmp(buffer,"rank") == 0)
+        else if (streq(buffer,"rank"))
         {
             StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
             data->rank = atoi(buffer);
         }
-        else if (strcmp(buffer,"shape") == 0)
+        else if (streq(buffer,"shape"))
         {
-            for (int i=0;i<(data->rank);i++)
+            int i;
+            for (i=0;i<(data->rank);i++)
             {
                 StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
                 data->shape[i] = atoi(buffer);
             }
         }
-        else if (strcmp(buffer,"items") == 0)
+        else if (streq(buffer,"items"))
         {
+            // read the number of items
             StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
             data->items = atoi(buffer);
-            
+
             StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
-            if (strcmp(buffer,"msb") == 0)
+            while (!streq(buffer,"data"))
             {
-                data->endian = DX_MSB;
+                if (streq(buffer,"lsb"))
+                {
+                    data->endian = DX_LSB;
+                }
+                else if (streq(buffer,"msb"))
+                {
+                    data->endian = DX_MSB;
+                }
+                else if (streq(buffer,"text"))
+                {
+                    data->dataType = DX_TEXT;
+                }
+                else if (streq(buffer,"ieee"))
+                {
+                    data->dataType = DX_IEEE;
+                }
+                else if (streq(buffer,"binary"))
+                {
+                    data->dataType = DX_BINARY;
+                }
+                else if (streq(buffer,"ascii"))
+                {
+                    data->dataType = DX_ASCII; 
+                }
+                StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
             }
-            else if (strcmp(buffer,"lsb") == 0)
-            {
-                data->endian = DX_LSB;
-            }
-            
+            // now we extract the data mode
             StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
-            
+            if (streq(buffer,"mode"))
+            {
+                StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+            }
+
+            if (streq(buffer,"file"))
+            {
+                data->dataMode = DX_FILE;
+                StringToken(NULL,data->file,DX_MAX_TOKEN_LENGTH);
+            }
+            else if (streq(buffer,"follows"))
+            {
+                data->dataMode = DX_FOLLOWS;
+            }
+            else
+            {
+                data->dataMode = DX_OFFSET;
+                data->offset = atoi(buffer);
+            }
         }
             
-    } while(StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH != NULL));
+    } while(StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH) != NULL);
+
+    obj->obj = (void *)data;
+    obj->isLoaded = 0;
+    return DX_SUCCESS;
 }
 
-/**
- * @brief Imports object data into memory
- * @param object the dxobject to load data for
- */
-/*int DX_ImportComponent(dxobject *object, const char * options)
-{
-}*/
-
-/**
- * @brief Frees memory consumed by the objects data.
- * @param object the dxobject to clean the data of.
- */
-/*int DX_CleanObject(dxobject *object)
-{
-}*/
-
-/**
- * @brief Closes the OpenDX file handle
- * @param file the OpenDX file to close
- */
-/*int DX_Close(dxfile * file)
-{
-    if (file != NULL)
-    {
-        return (fclose(file->fp) == 0) ? DX_SUCCESS : DX_UNKNOWN_ERROR;
-    }
-    else
-    {
-        return DX_NULL_POINTER; 
-    }
-}*/
-
-#define S_TRIM 1
-#define S_COMMENT 2
-#define S_EOF 3
-#define S_TOKEN 4
-#define S_DONE 5
-#define S_STRING 6
-
-/**
- * @brief Tokenises string allowing embbeded strings.
- * @details The behaviour is similar to strtok(), except a substring
- * nested within " " is considered a single token.
- * @param buffer The input string buffer, if buffer is NULL then the 
- * process continues.
- * @param token the ouput buffer for the next token.
- * @param size the size of the token buffer.
- * @returns the pointer to the unprocessed protion of the buffer, or
- * NULL if no buffer has been initialised or the end of buffer is reached.
- * @warning This code uses the null-termination character to determine the end
- * of the buffer. The behaviour is undefined if the buffer does not contain 
- * this character.
- */
-char * StringToken(char * buffer, char* token,int size)
-{
-    char c;
-    unsigned char state;
-    int index;
-    static char *buf = NULL;
-    static int pos = 0;
-    
-    if (buffer != NULL)
-    {
-        pos = 0;
-        buf = buffer;
-    }
-
-    if (buf == NULL)
-    {
-        return NULL;
-    }
-    
-    index = 0;
-    state = S_TRIM;
-    while (state != S_DONE && index < size)
-    {
-        c = buf[pos]; pos++;
-        switch (state)
-        {
-            case S_TRIM: /*clearing leading whitespace*/
-                switch(c)
-                {
-                    case ' ':
-                    case '\n':
-                    case '\t':
-                        state = S_TRIM;
-                        break;
-                    case '"':
-                        state = S_STRING;
-                        break;
-                    case '\0':
-                        token[index] = '\0';
-                        state = S_DONE;
-                        break;
-                    default:
-                        state = S_TOKEN;
-                        buf[index] = c;
-                        index++;
-                        break;
-                }
-                break;
-            case S_TOKEN: // reading a token
-                switch(c)
-                {
-                    case '"':
-                        state = S_STRING;
-                        break;
-                    case ' ':
-                    case '\t':
-                    case '\n':
-                    case '\0':
-                        token[index] = '\0';
-                        state = S_DONE;
-                        break;
-                    default:
-                        buf[index] = c;
-                        index++;
-                        break;
-                }
-                break;
-            case S_STRING: // reading a string
-                switch (c)
-                {
-                    case '\0':
-                    case '"':
-                        token[index] = '\0';
-                        state = S_DONE;
-                        break;
-                    default:
-                        buf[index] = c;
-                        index++;
-                        break;
-                }
-                break;
-        }
-    }
-
-    return  (c == '\0') NULL : buf + pos;
-}
-
-/**
- * @brief reads the next token from a file stream.
- * @details A token is a contiguous sequence of non-whitespace
- * characters, or a sequance bounded by double "s. 
- * Comment lines (identified by the #) are also ignored.
- * @param fp the input file stream
- * @param buffer the token output stream
- * @param size the bytes in buffer
- * @retVal 0 The State machine terminated at an accepting state, 
- * and token stores a valid token.
- * @retVal 1 The state machine terminated in a non-accepting state.
- */
-int NextToken(FILE *fp,char * buffer, int size)
-{
-    char c;
-    unsigned char state;
-    int index;
-    index = 0;
-    state = S_TRIM;
-    while (state != S_EOF && state != S_DONE && index < size)
-    {
-        c = fgetc(fp);
-        switch (state)
-        {
-            case S_TRIM: /*clearing leading whitespace*/
-                switch(c)
-                {
-                    case ' ':
-                    case '\n':
-                    case '\t':
-                        state = S_TRIM;
-                        break;
-                    case '#':
-                        state = S_COMMENT;
-                        break;
-                    case EOF:
-                        state = S_EOF;
-                        break;
-                    case '"':
-                        state = S_STRING;
-                        break;
-                    default:
-                        state = S_TOKEN;
-                        buffer[index] = c;
-                        index++;
-                        break;
-                }
-                break;
-            case S_COMMENT: /*ignoring comment lines*/
-                switch(c)
-                {
-                    case '\n':
-                        state = S_TRIM;
-                        break;
-                    case EOF:
-                        state = S_EOF;
-                        break;
-                    default:
-                        state = S_COMMENT;
-                        break;
-                }
-                break;
-            case S_TOKEN:
-                switch(c)
-                {
-                    case '"':
-                        state = S_STRING;
-                        break;
-                    case ' ':
-                    case '\t':
-                    case '\n':
-                    case EOF:
-                        buffer[index] = '\0';
-                        state = S_DONE;
-                        break;
-                    default:
-                        buffer[index] = c;
-                        index++;
-                        break;
-                }
-                break;
-            case S_STRING:
-                switch (c)
-                {
-                    case '"':
-                    case EOF:
-                        buffer[index] = '\0';
-                        state = S_DONE;
-                        break;
-                    default:
-                        buffer[index] = c;
-                        index++;
-                        break;
-                }
-                break;
-        }
-    }
-    return (state == S_EOF);
-}
-
-/**
- * @brief Reads the next line in the input file stream.
- * @details Just keeps reading until \n or EOF or read 
- * extactly size chars.
- * @param fp the input file stream
- * @param buffer the output line buffer
- * @param size the size of buffer
- * @return 1 if EOF is reached
- */
-int ReadLine(FILE *fp,char *buffer,int size)
-{
-    char c;
-    int index;
-    index = 0;
-    c = fgetc(fp);
-    while (c != '\n' && c != EOF && index < size)
-    {
-        buffer[index] = c;
-        index++;
-        c = fgetc(fp);
-    }
-    buffer[index] = '\0';
-    return (c == EOF);
-}
