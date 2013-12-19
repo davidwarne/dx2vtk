@@ -134,7 +134,9 @@ struct dxFile_struct{
 int DX_Open(dxFile *file,const char * filename);
 int DX_LoadAll(dxFile *file);
 int ParseObjectHeader(object *obj, const char* header);
-int ParseArrayObjectHeader(char * name, object *obj,const char *header);
+int ParseArrayObjectHeader(object *obj,const char *header);
+int ParseFieldObjectHeader(object *obj,const char *header);
+int ParseGroupObjectHeader(object *obj,const char *header);
 int LoadObjectData(object *obj,dxFile *file);
 int LoadArrayData(object *obj,dxFile *file);
 int LoadFieldData(object *obj,dxFile *file);

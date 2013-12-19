@@ -67,10 +67,9 @@ int DX_Open(dxFile *file, const char * filename)
 #ifdef DEBUG
             printf("HEADER %d %s\n",i,read_buf);
 #endif
-            i++;
             // get the cursor position
             fgetpos(file->fp,&(file->objs[i].pos));
-            DX_ParseObjectHeader(&(file->objs[i]),read_buf);
+            ParseObjectHeader(&(file->objs[i]),read_buf);
 #ifdef DEBUG
             printf("Class: %hhu\n",file->objs[i].class);
             printf("name: %s ,",file->objs[i].name);
@@ -95,10 +94,11 @@ int DX_Open(dxFile *file, const char * filename)
 
             }
 #endif
+            i++;
         }
 
     }
-
+    return DX_SUCCESS;
 }
 
 /**
@@ -151,6 +151,9 @@ int DX_LoadAll(dxFile *file)
     int rc;
     for (i=0;i<(file->numObjects);i++)
     {
+#ifdef DEBUG
+        printf("Reading class %d named %s\n",i,file->objs[i].name);
+#endif
         fsetpos(file->fp,&(file->objs[i].pos));
         rc = LoadObjectData(&(file->objs[i]),file);
         if (rc != DX_SUCCESS)
@@ -170,7 +173,7 @@ int DX_LoadAll(dxFile *file)
  * @param header the header text line
  * @returns DX_SUCCESS or an appropiate error code
  */
-int DX_ParseObjectHeader(object *obj, const char* header)
+int ParseObjectHeader(object *obj, const char* header)
 {
     //determine type and defer to a sub-function
     char name[DX_MAX_TOKEN_LENGTH];
@@ -195,15 +198,17 @@ int DX_ParseObjectHeader(object *obj, const char* header)
     if (streq(buffer,"array"))
     {
         obj->class = DX_ARRAY;
-        ParseArrayObjectHeader(name,obj,ptr);
+        ParseArrayObjectHeader(obj,ptr);
     }
     else if (streq(buffer,"field"))
     {
         obj->class = DX_FIELD;
+        ParseFieldObjectHeader(obj,ptr);
     }
     else if (streq(buffer,"group"))
     {
         obj->class = DX_GROUP;
+        ParseGroupObjectHeader(obj,ptr);
     }
     else
     {
@@ -214,14 +219,60 @@ int DX_ParseObjectHeader(object *obj, const char* header)
 }
 
 /**
+ * @brief Parses a field object header
+ * @param obj a pointer to the object wrapper that will hold this field
+ * @param header the pointer to header line starting from type
+ * @returns DX_SUCCESS if successfully complete, otherwise an appropriate
+ * error code
+ */
+int ParseFieldObjectHeader(object *obj,const char *header)
+{
+    field * data;
+
+    data = (field *)malloc(sizeof(field));
+    
+    if (data == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
+
+    obj->obj = (void*)data;
+    obj->isLoaded = 0;
+    return DX_SUCCESS;
+}
+
+/**
+ * @brief Parses a group object header
+ * @param obj a pointer to the object wrapper that will hold this group
+ * @param header the pointer to header line starting from type
+ * @returns DX_SUCCESS if successfully complete, otherwise an appropriate
+ * error code
+ */
+int ParseGroupObjectHeader(object *obj,const char *header)
+{
+    group * data;
+
+    data = (group *)malloc(sizeof(group));
+    
+    if (data == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
+
+    obj->obj = (void*)data;
+    obj->isLoaded = 0;
+    return DX_SUCCESS;
+}
+
+
+/**
  * @brief Parses an array object header
- * @param name The id of the object as parsed by ParseObjectHeader()
  * @param obj a pointer to the object wrapper that will hold this array
  * @param header the pointer to header line starting from type
  * @returns DX_SUCCESS if successfully complete, otherwise an appropriate
  * error code
  */
-int ParseArrayObjectHeader(char * name, object *obj,const char *header)
+int ParseArrayObjectHeader(object *obj,const char *header)
 {
     char buffer[DX_MAX_TOKEN_LENGTH];
     array *data;
