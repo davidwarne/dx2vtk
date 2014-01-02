@@ -15,12 +15,12 @@
  * of the buffer. The behaviour is undefined if the buffer does not contain 
  * this character.
  */
-const char * StringToken(const char * buffer, char* token,int size)
+char * StringToken(char * buffer, char* token,int size)
 {
     char c;
     unsigned char state;
     int index;
-    static const char *buf = NULL;
+    static char *buf = NULL;
     static int pos = 0;
     
     if (buffer != NULL)
