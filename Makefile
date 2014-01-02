@@ -24,7 +24,7 @@ dx2vtk.o: dx2vtk.c
 	$(CC) $(COPTS) -o $@ -c $< 
 
 $(BINARY): $(OBJS)
-	$(CC) $(COPTS) -o $@ $? $(LIB)
+	$(CC) $(COPTS) -o $@ $(OBJS) $(LIB)
 
 clean:
 	rm -f *.o $(BINARY)
