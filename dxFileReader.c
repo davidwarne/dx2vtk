@@ -173,7 +173,7 @@ int DX_LoadAll(dxFile *file)
  * @param header the header text line
  * @returns DX_SUCCESS or an appropiate error code
  */
-int ParseObjectHeader(object *obj, const char* header)
+int ParseObjectHeader(object *obj, char* header)
 {
     //determine type and defer to a sub-function
     char name[DX_MAX_TOKEN_LENGTH];
@@ -225,7 +225,7 @@ int ParseObjectHeader(object *obj, const char* header)
  * @returns DX_SUCCESS if successfully complete, otherwise an appropriate
  * error code
  */
-int ParseFieldObjectHeader(object *obj,const char *header)
+int ParseFieldObjectHeader(object *obj,char *header)
 {
     field * data;
 
@@ -248,7 +248,7 @@ int ParseFieldObjectHeader(object *obj,const char *header)
  * @returns DX_SUCCESS if successfully complete, otherwise an appropriate
  * error code
  */
-int ParseGroupObjectHeader(object *obj,const char *header)
+int ParseGroupObjectHeader(object *obj,char *header)
 {
     group * data;
 
@@ -272,7 +272,7 @@ int ParseGroupObjectHeader(object *obj,const char *header)
  * @returns DX_SUCCESS if successfully complete, otherwise an appropriate
  * error code
  */
-int ParseArrayObjectHeader(object *obj,const char *header)
+int ParseArrayObjectHeader(object *obj,char *header)
 {
     char buffer[DX_MAX_TOKEN_LENGTH];
     array *data;
@@ -452,14 +452,20 @@ int LoadFieldData(object *obj, dxFile *file)
     fgetpos(file->fp,&pos);
     ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
     StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
-    while(!streq(buffer,"component"))
+    while(streq(buffer,"component"))
     {
         data->numComponents++;
         ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+#ifdef DEBUG
+        printf("%s\n",read_buf);
+#endif
         StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
     }
     fsetpos(file->fp,&pos);
 
+#ifdef DEBUG
+    printf("num comp: %d\n",data->numComponents);
+#endif
     // allocate memory for the component pointers
     data->components = (object **)malloc((data->numComponents)*sizeof(object *));
     if (data->components == NULL)
@@ -487,7 +493,7 @@ int LoadFieldData(object *obj, dxFile *file)
         {
             StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
         }
-        StringToken(NULL,ref,DX_MAX_TOKEN_LENGTH);
+        strncpy(ref,buffer,DX_MAX_TOKEN_LENGTH);
         
         // find the object referenced 
         for (j=0;j<(file->numObjects);j++)
@@ -535,7 +541,7 @@ int LoadGroupData(object *obj,dxFile *file)
     fgetpos(file->fp,&pos);
     ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
     StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
-    while(!streq(buffer,"member"))
+    while(streq(buffer,"member"))
     {
         data->numMembers++;
         ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
@@ -570,7 +576,7 @@ int LoadGroupData(object *obj,dxFile *file)
         {
             StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
         }
-        StringToken(NULL,ref,DX_MAX_TOKEN_LENGTH);
+        strncpy(ref,buffer,DX_MAX_TOKEN_LENGTH);
         
         // find the object referenced 
         for (j=0;j<(file->numObjects);j++)

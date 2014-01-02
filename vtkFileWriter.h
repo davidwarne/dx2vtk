@@ -48,16 +48,48 @@
 #define VTK_QUADRATIC_TETRA 24
 #define VTK_QUADRATIC_HEXAHEDRON 25
 
+#define VTK_VERSION "4.2"
+
 typedef struct vtkDataFile_struct vtkDataFile;
+typedef struct polydata_struct polydata;
+typedef struct vtkData_struct vtkData;
+typedef struct scalar_struct scalar;
+typedef struct vector_struct vector;
+
+struct scalar_struct {
+    char name[32];
+    int type;
+    void * data;
+};
+
+struct vector_struct {
+    char name[32];
+    int type;
+    void *data;
+};
+
+struct vtkData_struct {
+    int numScalars;
+    int numColorScalars;
+    int numLookupTables;
+    int numVectors;
+    int numNormals;
+    int numTextureCoords;
+    int numTensors;
+    int numFields;
+    /** @todo for now only support scalars and vectors */
+    scalar *scalar_data;
+    vector *vector_data;
+};
 
 struct vtkDataFile_struct {
     char vtkVersion[4]; /*header version*/
     char title[256]; /**/
     unsigned char dataType; 
-    unsigned char Geometry;
+    unsigned char geometry;
     void * dataset;
-    void * pointdata;
-    void * celldata;
+    vtkData * pointdata;
+    vtkData * celldata;
 };
 
 struct structuredPoints_struct {
@@ -70,6 +102,14 @@ struct structuredGrid_struct {
     int dimensions[3];
     int numPoints;
     float *points; // numpoints*3;
+};
+
+struct polydata_struct{
+    int numPoints;
+    float * points;
+    int numPolygons;
+    int *numVerts;
+    int *polygons;
 };
 
 struct rectilinearGrid_struct{
@@ -91,4 +131,9 @@ struct unstructuredGrid_struct{
     int *cells;
     int *cellTypes;
 };
+
+/*function prototypes  */
+int VTK_Open(vtkDataFile *file, char * filename);
+int VTK_Write(vtkDataFile *file);
+int VTK_Close(vtkDataFile*file);
 #endif

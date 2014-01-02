@@ -29,7 +29,7 @@
 #define DX_SUCCESS 1
 #define DX_MEMORY_ERROR 0
 #define DX_FILE_NOT_FOUND_ERROR -1
-#define DX_INVALID_FILE_ERROR -1
+#define DX_INVALID_FILE_ERROR -2
 
 // object classes
 #define DX_FIELD 0
@@ -49,6 +49,9 @@
 // data types
 #define DX_INT 0
 #define DX_FLOAT 1
+
+// TODO: this is a dodgy hack... must fix this
+#define DATA_SIZE(t) ((t) == DX_INT || (t) == DX_FLOAT) ? 4 : 8 
 
 // data categories
 #define DX_REAL 0
@@ -133,10 +136,10 @@ struct dxFile_struct{
 // function prototypes
 int DX_Open(dxFile *file,const char * filename);
 int DX_LoadAll(dxFile *file);
-int ParseObjectHeader(object *obj, const char* header);
-int ParseArrayObjectHeader(object *obj,const char *header);
-int ParseFieldObjectHeader(object *obj,const char *header);
-int ParseGroupObjectHeader(object *obj,const char *header);
+int ParseObjectHeader(object *obj,  char* header);
+int ParseArrayObjectHeader(object *obj,char *header);
+int ParseFieldObjectHeader(object *obj,char *header);
+int ParseGroupObjectHeader(object *obj,char *header);
 int LoadObjectData(object *obj,dxFile *file);
 int LoadArrayData(object *obj,dxFile *file);
 int LoadFieldData(object *obj,dxFile *file);
