@@ -160,6 +160,21 @@ int DX_LoadAll(dxFile *file)
         {
             return rc;
         }
+        rc = LoadAttributes(&(file->objs[i]),file);
+        if (rc != DX_SUCCESS)
+        {
+            return rc;
+        }
+#ifdef DEBUG
+        {
+            int j;
+            printf("\t %d attributes:\n",file->objs[i].numAttributes);
+            for (j=0;j<(file->objs[i].numAttributes);j++)
+            {
+                printf("\t %s -> %s\n",file->objs[i].attributes[j].attribute_name,file->objs[i].attributes[j].string);
+            }
+        }
+#endif
     }
     return DX_SUCCESS;
 }
@@ -645,7 +660,7 @@ int LoadArrayData(object *obj,dxFile *file)
                     datai = (int *)malloc(size*sizeof(int));
                     for (i=0;i<size;i++)
                     {
-                        fscanf(file->fp,"%f",datai+i);
+                        fscanf(file->fp,"%d",datai+i);
                     }
                     data->data = (void*)datai;
                     break;
@@ -659,5 +674,84 @@ int LoadArrayData(object *obj,dxFile *file)
         case DX_FILE:
             break;
     }
+    return DX_SUCCESS;
+}
+
+/**
+ * @brief loads attribute data for the current object
+ * @param obj the object currently being read
+ * @param file the OpenDX file
+ * @returns DX_SUCCESS or an appropriate error code
+ * @note this assumes that the file cursor is located at the start of the 
+ * first attribute line
+ */
+int LoadAttributes(object *obj,dxFile *file)
+{
+    char buffer[DX_MAX_TOKEN_LENGTH];
+    fpos_t pos;
+    int i;
+    int rc;
+    obj->numAttributes = 0;
+    
+    // skip blank lines
+    do 
+    {
+#ifdef DEBUG
+        printf("blank\n");
+#endif
+        // we will need to come back here  
+        fgetpos(file->fp,&pos);
+        rc = ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+    } while (rc == 0 && StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH) == NULL);
+    
+    // count the attibutes
+    while (streq(buffer,"attribute"))
+    {
+        obj->numAttributes++;
+        ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+        StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
+    }
+    // jump back to start of attributes
+    fsetpos(file->fp,&pos);
+    
+    // allocate memory
+    obj->attributes = (attribute *)malloc((obj->numAttributes)*sizeof(attribute));
+    if (obj->attributes == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
+
+    // parse attributes
+    /** @todo currently external file references in attributes is not supported*/
+    for (i=0;i<(obj->numAttributes);i++)
+    {
+        ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+        // read attribute key word
+        StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
+        // read the attribute name and store
+        StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        strncpy(obj->attributes[i].attribute_name,buffer,DX_MAX_TOKEN_LENGTH);
+        // read the type 
+        StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        if (streq(buffer,"value"))
+        {
+            StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        }
+
+        if (streq(buffer,"file"))
+        {
+            // not supported
+            return DX_INVALID_FILE_ERROR;
+        }
+        else if (streq(buffer,"string") || streq(buffer,"number"))
+        {
+            // read the value
+            StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        }
+
+        strncpy(obj->attributes[i].string,buffer,DX_MAX_TOKEN_LENGTH);
+        obj->attributes[i].number = (int)atoi(buffer);
+    }
+
     return DX_SUCCESS;
 }

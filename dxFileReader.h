@@ -50,8 +50,6 @@
 #define DX_INT 0
 #define DX_FLOAT 1
 
-// TODO: this is a dodgy hack... must fix this
-#define DATA_SIZE(t) ((t) == DX_INT || (t) == DX_FLOAT) ? 4 : 8 
 
 // data categories
 #define DX_REAL 0
@@ -88,7 +86,7 @@ struct object_struct{
     unsigned char isLoaded;
     void *obj; // pointer to actual class instance
     int numAttributes;
-    object *attributes;
+    attribute *attributes;
     fpos_t pos; // cursor pos after header
 };
 
@@ -108,12 +106,8 @@ struct array_struct{
 
 struct attribute_struct{
     char attribute_name[DX_MAX_TOKEN_LENGTH];
-    int value;
-    char string[DX_COMMENT_LENGTH];
-    char name[DX_MAX_TOKEN_LENGTH];
+    char string[DX_MAX_TOKEN_LENGTH];
     int number;
-    char file[DX_MAX_FILENAME_LENGTH];
-
 };
 
 struct field_struct{
