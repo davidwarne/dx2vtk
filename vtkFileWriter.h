@@ -14,6 +14,10 @@
 
 #ifndef __VTKFILEWRITER_H
 #define __VTKFILEWRITER_H
+
+#include <stdio.h>
+#include <stdlib.h>
+
 /*data types*/
 #define VTK_ASCII 0
 #define VTK_BINARY 1
@@ -50,7 +54,11 @@
 
 #define VTK_VERSION "4.2"
 
+#define VTK_INT 0
+#define VTK_FLOAT 1
+
 typedef struct vtkDataFile_struct vtkDataFile;
+typedef struct unstructuredGrid_struct unstructuredGrid;
 typedef struct polydata_struct polydata;
 typedef struct vtkData_struct vtkData;
 typedef struct scalar_struct scalar;
@@ -83,6 +91,7 @@ struct vtkData_struct {
 };
 
 struct vtkDataFile_struct {
+    FILE *fp;
     char vtkVersion[4]; /*header version*/
     char title[256]; /**/
     unsigned char dataType; 
@@ -129,6 +138,7 @@ struct unstructuredGrid_struct{
     int numCells;
     int cellSize;
     int *cells;
+    int *numVerts;
     int *cellTypes;
 };
 

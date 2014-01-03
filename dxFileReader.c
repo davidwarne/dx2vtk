@@ -755,3 +755,25 @@ int LoadAttributes(object *obj,dxFile *file)
 
     return DX_SUCCESS;
 }
+
+/**
+ * @brief Gets an attribute if the object has such an attribute
+ * @param obj the object to get the attribute of
+ * @param key the name of the desired attribute
+ * @returns a pointer to the attribute, NULL if the object does not have such an 
+ * attribute
+ */
+attribute * GetAttribute(object *obj,char * key)
+{
+    int i;
+    for (i=0;i<(obj->numAttributes);i++)
+    {
+        if (streq(obj->attributes[i].attribute_name,key))
+        {
+            return obj->attributes + i;
+        }
+    }
+    return NULL;
+}
+
+

@@ -30,6 +30,7 @@
 #define DX_MEMORY_ERROR 0
 #define DX_FILE_NOT_FOUND_ERROR -1
 #define DX_INVALID_FILE_ERROR -2
+#define DX_NOT_SUPPORTED_ERROR -3
 
 // object classes
 #define DX_FIELD 0
@@ -50,6 +51,8 @@
 #define DX_INT 0
 #define DX_FLOAT 1
 
+#define DX_INT_SIZE 4
+#define DX_FLOAT_SIZE 4
 
 // data categories
 #define DX_REAL 0
@@ -138,4 +141,5 @@ int LoadObjectData(object *obj,dxFile *file);
 int LoadArrayData(object *obj,dxFile *file);
 int LoadFieldData(object *obj,dxFile *file);
 int LoadGroupData(object *obj,dxFile *file);
+attribute * GetAttribute(object *obj,char * key);
 #endif
