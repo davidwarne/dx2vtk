@@ -1,7 +1,10 @@
 #!/bin/make
 
+INSTALLDIR = /usr/local/bin
+
 CC = gcc
-COPTS = -g -DDEBUG
+#COPTS = -g -DDEBUG
+COPTS = -O2
 SRC = dxFileReader.c vtkFileWriter.c dx2vtk.c ioutils.c
 OBJS = $(SRC:.c=.o)
 INC = 
@@ -25,6 +28,10 @@ dx2vtk.o: dx2vtk.c
 
 $(BINARY): $(OBJS)
 	$(CC) $(COPTS) -o $@ $(OBJS) $(LIB)
+
+install: $(BINARY)
+	cp $(BINARY) $(INSTALLDIR)
+	chmod 755 $(INSTALLDIR)/$(BINARY)
 
 clean:
 	rm -f *.o $(BINARY)

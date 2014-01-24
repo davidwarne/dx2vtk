@@ -151,30 +151,34 @@ int DX_LoadAll(dxFile *file)
     int rc;
     for (i=0;i<(file->numObjects);i++)
     {
+        if (file->objs[i].isLoaded == 0)
+        {
 #ifdef DEBUG
-        printf("Reading class %d named %s\n",i,file->objs[i].name);
+            printf("Reading class %d named %s\n",i,file->objs[i].name);
 #endif
-        fsetpos(file->fp,&(file->objs[i].pos));
-        rc = LoadObjectData(&(file->objs[i]),file);
-        if (rc != DX_SUCCESS)
-        {
-            return rc;
-        }
-        rc = LoadAttributes(&(file->objs[i]),file);
-        if (rc != DX_SUCCESS)
-        {
-            return rc;
-        }
-#ifdef DEBUG
-        {
-            int j;
-            printf("\t %d attributes:\n",file->objs[i].numAttributes);
-            for (j=0;j<(file->objs[i].numAttributes);j++)
+            fsetpos(file->fp,&(file->objs[i].pos));
+
+            rc = LoadObjectData(&(file->objs[i]),file);
+            if (rc != DX_SUCCESS)
             {
-                printf("\t %s -> %s\n",file->objs[i].attributes[j].attribute_name,file->objs[i].attributes[j].string);
+                return rc;
             }
-        }
+            rc = LoadAttributes(&(file->objs[i]),file);
+            if (rc != DX_SUCCESS)
+            {
+                return rc;
+            }
+#ifdef DEBUG
+            {
+                int j;
+                printf("\t %d attributes:\n",file->objs[i].numAttributes);
+                for (j=0;j<(file->objs[i].numAttributes);j++)
+                {
+                    printf("\t %s -> %s\n",file->objs[i].attributes[j].attribute_name,file->objs[i].attributes[j].string);
+                }
+            }
 #endif
+        }
     }
     return DX_SUCCESS;
 }
@@ -225,6 +229,21 @@ int ParseObjectHeader(object *obj, char* header)
         obj->class = DX_GROUP;
         ParseGroupObjectHeader(obj,ptr);
     }
+    else if (streq(buffer,"gridpositions"))
+    {
+        obj->class = DX_GRIDPOSITIONS;
+        ParseGridPositionsObjectHeader(obj,ptr);
+    }
+    else if (streq(buffer,"gridconnections"))
+    {
+        obj->class = DX_GRIDCONNECTIONs;
+        ParseGridConnectionsObjectHeader(obj,ptr);
+    }
+    else if (streq(buffer,"series"))
+    {
+        obj->class = DX_SERIES;
+        ParseSeriesObjectHeader(obj,ptr);
+    }
     else
     {
         return DX_INVALID_FILE_ERROR;
@@ -243,6 +262,11 @@ int ParseObjectHeader(object *obj, char* header)
 int ParseFieldObjectHeader(object *obj,char *header)
 {
     field * data;
+
+    if (obj->class != DX_FIELD)
+    {
+        return DX_INVALID_USAGE_ERROR; 
+    }
 
     data = (field *)malloc(sizeof(field));
     
@@ -267,6 +291,10 @@ int ParseGroupObjectHeader(object *obj,char *header)
 {
     group * data;
 
+    if (obj->class != DX_GROUP)
+    {
+        return DX_INVALID_USAGE_ERROR; 
+    }
     data = (group *)malloc(sizeof(group));
     
     if (data == NULL)
@@ -292,6 +320,10 @@ int ParseArrayObjectHeader(object *obj,char *header)
     char buffer[DX_MAX_TOKEN_LENGTH];
     array *data;
 
+    if (obj->class != DX_ARRAY)
+    {
+        return DX_INVALID_USAGE_ERROR; 
+    }
     // allocate memory for new array
     data = (array *)malloc(sizeof(array));
     if (data == NULL)
@@ -394,12 +426,176 @@ int ParseArrayObjectHeader(object *obj,char *header)
             }
             else
             {
+                // @todo update this so that external file references are stored
                 data->dataMode = DX_OFFSET;
                 data->offset = atoi(buffer);
             }
         }
             
     } while(StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH) != NULL);
+
+    obj->obj = (void *)data;
+    obj->isLoaded = 0;
+    return DX_SUCCESS;
+}
+
+/**
+ * @brief Parses gridpositions object header
+ * @param obj a pointer to the object wrapper that will hold this gridpositions object
+ * @param header the pointer to header line starting from type
+ * @returns DX_SUCCESS if successfully complete, otherwise an appropriate
+ * error code
+ */
+int ParseGridPositionsHeader(object *obj, char *header)
+{
+    char buffer[DX_MAX_TOKEN_LENGTH];
+    int temp_counts[DX_MAX_MESH_DIMENSIONS];
+    gridpositions *data;
+    
+    if (obj->class != DX_GRIDPOSITIONS)
+    {
+        return DX_INVALID_USAGE_ERROR; 
+    }
+    
+    // allocate memory for new gridpositions
+    data = (gridpositions *)malloc(sizeof(gridpositions));
+
+    if (data == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
+
+    data->numCounts = -1;
+    StringToken(header,buffer,DX_MAX_TOKEN_LENGTH);
+    // @note I hate the way OpenDX does not tell you the number of dimensions...
+    // hard coding a limit seems so hacky and dirty... but for now it'll do...
+    do 
+    {
+        if (streq(buffer,"counts"))
+        {
+            data->numCounts = 0;    
+        }
+        else if (data->numCounts >= 0 && data->numCounts < DX_MAX_MESH_DIMENSIONS)
+        {
+            temp_counts[data->numCounts] = atoi(buffer);
+            data->numCounts++;
+        }
+    } while (StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH))
+
+    if (data->numCounts == -1)
+    {
+        return DX_INVALID_FILE_ERROR;
+    }
+
+    // allocate memory for the counts
+    data->counts = (int *)malloc((data->numCounts)*sizeof(int));
+    if (data->counts == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
+
+    data->origin = (float *)malloc((data->numCounts)*sizeof(float));
+    if (data->origin == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
+    
+    data->deltas = (float *)malloc((data->numCounts)*(data->numCounts)*sizeof(float));
+    if (data->deltas == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
+
+    obj->obj = (void *)data;
+    obj->isLoaded = 0;
+    return DX_SUCCESS;
+}
+
+/**
+ * @brief Parses gridconnections object header
+ * @param obj a pointer to the object wrapper that will hold this gridconnections object
+ * @param header the pointer to header line starting from type
+ * @returns DX_SUCCESS if successfully complete, otherwise an appropriate
+ * error code
+ */
+int ParseGridConnectionsHeader(object *obj, char *header)
+{
+    char buffer[DX_MAX_TOKEN_LENGTH];
+    int temp_counts[DX_MAX_MESH_DIMENSIONS];
+    gridconnections *data;
+
+    if (obj->class != DX_GRIDCONNECTIONS)
+    {
+        return DX_INVALID_USAGE_ERROR; 
+    }
+    
+    // allocate memory for new gridconnections
+    data = (gridconnections *)malloc(sizeof(gridconnections));
+
+    if (data == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
+
+    data->numCounts = -1;
+    StringToken(header,buffer,DX_MAX_TOKEN_LENGTH);
+    do 
+    {
+        if (streq(buffer,"counts"))
+        {
+            data->numCounts = 0;    
+        }
+        else if (data->numCounts >= 0 && data->numCounts < DX_MAX_MESH_DIMENSIONS)
+        {
+            temp_counts[data->numCounts] = atoi(buffer);
+            data->numCounts++;
+        }
+        else if (streq(buffer,"meshoffsets"))
+        {
+            return DX_NOT_SUPPORTED_ERROR;
+        }
+    } while (StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH))
+
+    if (data->numCounts == -1)
+    {
+        return DX_INVALID_FILE_ERROR;
+    }
+
+    // allocate memory for the counts
+    data->counts = (int *)malloc((data->numCounts)*sizeof(int));
+    if (data->counts == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
+
+    obj->obj = (void *)data;
+    obj->isLoaded = 0;
+    return DX_SUCCESS;
+}
+
+/**
+ * @brief Parses series object header
+ * @param obj a pointer to the object wrapper that will hold this series
+ * @param header the pointer to header line starting from type
+ * @returns DX_SUCCESS if successfully complete, otherwise an appropriate
+ * error code
+ */
+int ParseSeriesHeader(object *obj, char *header)
+{
+    char buffer[DX_MAX_TOKEN_LENGTH];
+    series *data;
+    
+    if (obj->class != DX_SERIES)
+    {
+        return DX_INVALID_USAGE_ERROR; 
+    }
+    
+    // no extra header bits anyway
+    data = (series *)malloc(sizeof(series));
+    if (data == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
 
     obj->obj = (void *)data;
     obj->isLoaded = 0;
@@ -429,6 +625,15 @@ int LoadObjectData(object *obj,dxFile * file)
         case DX_GROUP:
             rc = LoadGroupData(obj,file);
             break;
+        case DX_GRIDPOSITIONS:
+            rc = LoadGridPositionsData(obj,file);
+            break;
+        case DX_GRIDCONNECTIONS:
+            rc = LoadGridConnectionsData(obj,file);
+            break;
+        case DX_SERIES:
+            rc = LoadSeriesData(obj,file);
+            break;
     }
 
     if (rc != DX_SUCCESS)
@@ -436,7 +641,6 @@ int LoadObjectData(object *obj,dxFile * file)
         return rc;
     }
     
-    // TODO: get the attributes, but for now ignore
     obj->isLoaded = 1;
     return DX_SUCCESS;
 }
@@ -459,7 +663,12 @@ int LoadFieldData(object *obj, dxFile *file)
     char buffer[DX_MAX_TOKEN_LENGTH];
     char alias[DX_MAX_TOKEN_LENGTH];
     char ref[DX_MAX_TOKEN_LENGTH];
-    
+ 
+    if (obj->class != DX_FIELD)
+    {
+        return DX_INVALID_USAGE_ERROR;
+    }
+
     data = (field *)(obj->obj);
     data->numComponents = 0;
 
@@ -511,14 +720,7 @@ int LoadFieldData(object *obj, dxFile *file)
         strncpy(ref,buffer,DX_MAX_TOKEN_LENGTH);
         
         // find the object referenced 
-        for (j=0;j<(file->numObjects);j++)
-        {
-            if (streq(file->objs[j].name,ref))
-            {
-                // store the pointer
-                data->components[i] = &(file->objs[j]);
-            }
-        }
+        data->components[i] = GetObject(file, ref);
 
         if (data->components[i] == NULL)
         {
@@ -549,6 +751,11 @@ int LoadGroupData(object *obj,dxFile *file)
     char alias[DX_MAX_TOKEN_LENGTH];
     char ref[DX_MAX_TOKEN_LENGTH];
     
+    if (obj->class != DX_GROUP)
+    {
+        return DX_INVALID_USAGE_ERROR;
+    }
+
     data = (group *)(obj->obj);
     data->numMembers = 0;
 
@@ -594,14 +801,7 @@ int LoadGroupData(object *obj,dxFile *file)
         strncpy(ref,buffer,DX_MAX_TOKEN_LENGTH);
         
         // find the object referenced 
-        for (j=0;j<(file->numObjects);j++)
-        {
-            if (streq(file->objs[j].name,ref))
-            {
-                // store the pointer
-                data->members[i] = &(file->objs[j]);
-            }
-        }
+        data->members[i] = GetObject(file, ref);
 
         if (data->members[i] == NULL)
         {
@@ -629,6 +829,11 @@ int LoadArrayData(object *obj,dxFile *file)
     size_t size;
     int i;
     array *data;
+
+    if (obj->class != DX_ARRAY)
+    {
+        return DX_INVALID_USAGE_ERROR;
+    }
 
     data = (array *)(obj->obj);
     size = (data->items);
@@ -673,6 +878,123 @@ int LoadArrayData(object *obj,dxFile *file)
             break;
         case DX_FILE:
             break;
+    }
+    return DX_SUCCESS;
+}
+
+/**
+ * @brief loads girdpositions data
+ * @details allocates memory and loads gridpositions into memory
+ * @param obj the pointer which wraps the array object
+ * @param file the dxFile structure, assumes the stream cursor is located just
+ * after the array header.
+ * @returns DX_SUCCESS on compeletion, otherwise an appropriate error message
+ */
+int LoadGridPositionData(object *obj, dxFile *file)
+{
+}
+
+/**
+ * @brief loads array data
+ * @details allocates memory and loads data array into memory
+ * @param obj the pointer which wraps the array object
+ * @param file the dxFile structure, assumes the stream cursor is located just
+ * after the array header.
+ * @returns DX_SUCCESS on compeletion, otherwise an appropriate error message
+ */
+int LoadGridConnectionsData(object *obj, dxFile *file)
+{
+}
+
+/**
+ * @brief loads series data
+ * @details allocates memory and loads series into memory
+ * @param obj the pointer which wraps the array object
+ * @param file the dxFile structure, assumes the stream cursor is located just
+ * after the array header.
+ * @returns DX_SUCCESS on compeletion, otherwise an appropriate error message
+ */
+int LoadSeriesData(object *obj, dxFile *file)
+{
+    fpos_t pos;
+    series * data;
+    int i,j,ind;
+    char buffer[DX_MAX_TOKEN_LENGTH];
+    char ref[DX_MAX_TOKEN_LENGTH];
+
+    if (obj->class != DX_SERIES)
+    {
+        return DX_INVALID_USAGE_ERROR;
+    }
+
+    data = (series *)(obj->obj);
+    data->numMembers = 0;
+
+    // count the number of members
+    fgetpos(file->fp,&pos);
+    ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+    StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
+    
+    while(streq(buffer,"member"))
+    {
+        data->numMembers++;
+        ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+        StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
+    }
+    fsetpos(file->fp,&pos);
+
+    // allocate memory for the members
+    data->positions = (float *)malloc((data->numMembers)*sizeof(float));
+    if (data->positions == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
+
+    data->members = (object **)malloc((data->numMembers)*sizeof(object *));
+    if (data->members == NULL)
+    {
+        return DX_MEMORY_ERROR;
+    }
+
+    for (i=0;i<(data->numMembers);i++)
+    {
+        data->members[i] = NULL;
+    }
+
+    // now parse member data and link to objects
+    for (i=0;i<(data->numMembers);i++)
+    {
+        // read the line
+        ReadLine(file->fp,read_buf,DX_READ_BUFFER_SIZE);
+        // read member
+        StringToken(read_buf,buffer,DX_MAX_TOKEN_LENGTH);
+        // get member index
+        StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        ind = atoi(buffer);
+        if (ind < 0 || ind >= data->numMembers)
+        {
+            return DX_INVALID_FILE_ERROR;
+        }
+        // read position
+        StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        // read position number
+        StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        data->positions[ind] = atof(buffer);
+        // read reference
+        StringToken(NULL,buffer,DX_MAX_TOKEN_LENGTH);
+        if (streq(buffer,"value"))
+        {
+            StringToken(NULL,buffer,DX_TOKEN_LENGTH);
+        }
+        strncpy(ref,buffer,DX_MAX_TOKEN_LENGTH);
+
+        // find the referenced object
+        data->members[ind] = GetObject(file, ref);
+        
+        if (data->members[ind] == NULL)
+        {
+            return DX_INVALID_FILE;
+        }
     }
     return DX_SUCCESS;
 }
@@ -776,4 +1098,15 @@ attribute * GetAttribute(object *obj,char * key)
     return NULL;
 }
 
-
+object * GetObject(dxFile *file, char *name)
+{
+    int i;
+    for (i=0;i<(file->numObjects);i++)
+    {
+        if (streq(file->objs[i].name,name))
+        {
+            return file->objs + i;
+        }
+    }
+    return NULL;
+}
