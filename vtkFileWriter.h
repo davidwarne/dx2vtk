@@ -59,6 +59,7 @@
 
 typedef struct vtkDataFile_struct vtkDataFile;
 typedef struct unstructuredGrid_struct unstructuredGrid;
+typedef struct structuredPoints_struct structuredPoints;
 typedef struct polydata_struct polydata;
 typedef struct vtkData_struct vtkData;
 typedef struct scalar_struct scalar;

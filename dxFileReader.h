@@ -33,6 +33,7 @@
 #define DX_INVALID_FILE_ERROR       -2
 #define DX_NOT_SUPPORTED_ERROR      -3
 #define DX_INVALID_USAGE_ERROR      -4
+#define DX_NOT_IMPLEMENTED_YET_ERROR -5
 
 // object classes
 #define DX_FIELD                    0
@@ -171,10 +172,11 @@ int LoadObjectData(object *obj,dxFile *file);
 int LoadArrayData(object *obj,dxFile *file);
 int LoadFieldData(object *obj,dxFile *file);
 int LoadGroupData(object *obj,dxFile *file);
-int LoadGridPositionData(object *obj, dxFile *file);
+int LoadGridPositionsData(object *obj, dxFile *file);
 int LoadGridConnectionsData(object *obj, dxFile *file);
 int LoadSeriesData(object *obj, dxFile *file);
 
+void PrintObjectHeader(object *obj);
 attribute * GetAttribute(object *obj,char * key);
 object * GetObject(dxFile *file, char * name);
 #endif

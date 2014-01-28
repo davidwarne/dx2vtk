@@ -16,62 +16,30 @@
 
 #include "ioutils.h"
 
+
 /**
- * @brief converts a dx file to a vtk file
- * @detials deteremines from the field infomation (e.g., positions, connections etc)
- * the type of vtk data to use.
- * @param dxf dx file pointer
- * @param vtkf vtk file pointer
- *
+ * @brief creates a VTK dataset from a OpenDX Field object OpenDX file.
+ * @details uses the position and connection OpenDX field components to 
+ * construct a VTK dataset mesh.
+ * @param field pointer to the field object wrapper
+ * @param pointer to the vtkFile structure to load to
+ * @returns DX_SUCCESS on completion, or an appropriate error code
  */
-int dxFile2vtkDataFile(dxFile *dxf, vtkDataFile *vtkf)
+int dxField2VTKDataSet(object *fieldObject, vtkDataFile *vtkFile)
 {
-    // for now we are assuming that a dx file only has a single 
-    // field... really a vtk file maps better to a single field,
-    // multiple fields (or groups) should map to multiple vtk files.
-    int i,j,k;
-    object * obj;
+    int i;
     object * pos;
     object * con;
-    field * fld;
-    int numPoints;
-
-    sprintf(vtkf->vtkVersion,"%s",VTK_VERSION);
-    sprintf(vtkf->title,"Converted from OpenDX file %s\n",dxf->filename);
-    /** @todo for now only support ASCII vtk file (need to change this later)*/
+    field *fld;
     
-    /** @todo implement cell data also, but to do this I need to parse the dx attributes (which right now I am not)*/
-    vtkf->pointdata = (vtkData *)malloc(sizeof(vtkData));
-    if (vtkf->pointdata == NULL)
-    {
-        return DX_MEMORY_ERROR;
-    }
-    vtkf->celldata = NULL;
-
-    vtkf->dataType = VTK_ASCII;
-
-    vtkf->pointdata->numScalars = 0;
-    vtkf->pointdata->numVectors = 0;
+    fld = (field *)(fieldObject->obj);
 #ifdef DEBUG
-    printf("VTK file header\n");
-    printf("\t# vtk DataFile Version %s\n",vtkf->vtkVersion);
-    printf("\t%s\n",vtkf->title);
-#endif
-
-    // find a field
-    for (i=0;i<(dxf->numObjects);i++)
-    {
-        if (dxf->objs[i].class == DX_FIELD)
-        {
-            obj = &(dxf->objs[i]);
-        }
-    }
-    fld = (field *)(obj->obj);
-
-#ifdef DEBUG
-    printf("Writing Field %d [%s] %hhu\n",obj->number,obj->name,obj->isLoaded);
+    printf("Writing Field %d [%s] %hhu\n",fieldObject->number,fieldObject->name,fieldObject->isLoaded);
     printf("Num Components: %d\n",fld->numComponents);
 #endif
+    
+    // identify the position (geometry) and connections (topology) components
+    // any other components are considered as data
     for (i=0;i<fld->numComponents;i++)
     {
         object * comp;
@@ -86,30 +54,108 @@ int dxFile2vtkDataFile(dxFile *dxf, vtkDataFile *vtkf)
         }
         else 
         {
-            if (((array *)(comp->obj))->rank == 0)
+            array * data;
+            attribute *attr;
+            data = (array *)(comp->obj);
+            // test if data depends on positions or connections
+            attr = GetAttribute(comp,"dep");
+            if (attr != NULL)
             {
-                vtkf->pointdata->numScalars++;
-            }
-            else if ( ((array *)(comp->obj))->rank == 1 && ((array *)(comp->obj))->shape[0] == 3)
-            {
-                vtkf->pointdata->numVectors++;
+                if (streq(attr->string,"positions"))
+                {
+                
+                    if (data->rank == 0)
+                    {
+                        vtkFile->pointdata->numScalars++;
+                    }
+                    else if (data->rank == 1 && data->shape[0] == 3)
+                    {
+                        vtkFile->pointdata->numVectors++;
+                    }
+
+                }
+                else if (streq(attr->string,"connections"))
+                {
+                    if (data->rank == 0)
+                    {
+                        vtkFile->celldata->numScalars++;
+                    }
+                    else if ( data->rank == 1 && data->shape[0] == 3)
+                    {
+                        vtkFile->celldata->numVectors++;
+                    }
+
+                }
             }
         }
     }
-
-
+   
     // dx positions and connections map to a vtk data set type
-    //  the following is incorrect... shape 3 connections equals polydata
-    //  whereas shape 4 equals Unstructured Grid... maybe just make both cases
-    //  unstructured grid...
-    /** @todo put this is a function and support all types*/
-    if (pos->class == DX_ARRAY && con->class == DX_ARRAY)
+    if (pos->class == DX_GRIDPOSITIONS && con->class == DX_GRIDCONNECTIONS)
     {
+        gridpositions *gp;
+        gridconnections *gc;
+        structuredPoints *spdata;
+        vtkFile->geometry = VTK_STRUCTURED_POINTS;
+
+        gp = (gridpositions *)pos->obj;
+        gc = (gridconnections *)con->obj;
+        
+        spdata = (structuredPoints *)malloc(sizeof(structuredPoints));
+        if (spdata == NULL)
+        {
+            return DX_MEMORY_ERROR;
+        }
+
+        spdata->dimensions[0] = 1;
+        spdata->dimensions[1] = 1;
+        spdata->dimensions[2] = 1;
+
+        spdata->origin[0] = 0.0;
+        spdata->origin[1] = 0.0;
+        spdata->origin[2] = 0.0;
+
+        spdata->spacing[0] = 1.0;
+        spdata->spacing[1] = 1.0;
+        spdata->spacing[2] = 1.0;
+
+        // gridconnections are really not used
+        if (gp->numCounts > 3)
+        {
+            return DX_NOT_SUPPORTED_ERROR;
+        }
+
+        for (i=0;i<gp->numCounts;i++)
+        {
+            spdata->dimensions[i] = gp->counts[i];
+        }
+        
+        for (i=0;i<gp->numCounts;i++)
+        {
+            spdata->origin[i] = gp->origin[i];
+        }
+
+        // @todo we assume that deltas are orthogonal, if not then structured points is
+        // not the best dataset type... but not quite sure which on is the best yet.
+        for (i=0;i<gp->numCounts;i++)
+        {
+            spdata->spacing[i] = gp->deltas[i*(gp->numCounts)+ i];
+        }
+        
+        vtkFile->dataset = spdata;
+        return DX_SUCCESS;
+    }
+    else if (pos->class == DX_ARRAY && con->class == DX_ARRAY)
+    {
+        //  the following is incorrect... shape 3 connections equals polydata
+        //  whereas shape 4 equals Unstructured Grid... to be simple I've just made 
+        //  both map to unstructured grid, but this is not ideal
+
         array *pos_array;
         array *con_array;
         attribute *attr;
         unstructuredGrid *ugdata;
-        vtkf->geometry = VTK_UNSTRUCTURED_GRID;
+        vtkFile->geometry = VTK_UNSTRUCTURED_GRID;
         // extract the geometry and topology
         pos_array = (array *)pos->obj;
         con_array = (array *)con->obj;
@@ -210,82 +256,246 @@ int dxFile2vtkDataFile(dxFile *dxf, vtkDataFile *vtkf)
             memcpy((void*)ugdata->cells,con_array->data,(con_array->shape[0])*(con_array->items)*sizeof(int));
         }
         
-        vtkf->dataset = ugdata;
-        numPoints = ugdata->numPoints;
+        vtkFile->dataset = ugdata;
+        return DX_SUCCESS;
+    }
+    else
+    {
+        return DX_NOT_SUPPORTED_ERROR;
     }
 
-    // allocate memory for pointt data
-    vtkf->pointdata->scalar_data = (scalar *)malloc((vtkf->pointdata->numScalars)*sizeof(scalar));
-    vtkf->pointdata->vector_data = (vector *)malloc((vtkf->pointdata->numVectors)*sizeof(vector));
+}
 
-    if (vtkf->pointdata->scalar_data == NULL || vtkf->pointdata->vector_data == NULL)
+/**
+ * @brief converts an OpenDX data array into a vtk data attribute
+ * @details Arrays in OpenDx can be scalar, vector, or tensor etc... however
+ * vtk does provide a disinction here. so the the converison is done and then appended
+ * a vtkData object, whic could be cell or point data.
+ * @param arrayObject a pointer to the object wrapper for the data array to convert
+ * @param data pointer to the vtkdata object (will either be cell or point data)
+ * @returns DX_SUCCESS or completion, otherwise an appropriate error is returned
+ * @note this function modifies the vtk data object, it will append scalar, vectoror tensor
+ * data as required. 
+ */
+int dxArray2vtkData(object *arrayObject, vtkData* data)
+{
+    int i,j,k;
+    // reset to use as an index
+    j = data->numScalars;
+    k = data->numVectors;
+    if (!(streq(arrayObject->alias,"positions") || streq(arrayObject->alias,"connections")))
+    {
+        array * data_array;
+        size_t nbytes;
+        data_array = (array *)arrayObject->obj;
+      
+        switch(data_array->type)
+        {
+            case DX_INT:
+                nbytes = DX_INT_SIZE;
+                break;
+            case DX_FLOAT:
+                nbytes = DX_FLOAT_SIZE;
+                break;
+        }
+
+        if (data_array->rank == 0)
+        {
+            data->scalar_data[j].data = malloc(nbytes*data_array->items);
+            if (data->scalar_data[j].data == NULL)
+            {
+                return DX_MEMORY_ERROR;
+            }
+            // copydata
+            memcpy(data->scalar_data[j].data,data_array->data,nbytes*data_array->items);
+            data->scalar_data[j].type = data_array->type;
+            strncpy(data->scalar_data[j].name,arrayObject->alias,DX_MAX_TOKEN_LENGTH);
+            data->numScalars++;
+        }
+        else if (data_array->rank == 1 && data_array->shape[0] == 3)
+        {
+            data->vector_data[k].data = malloc(nbytes*(data_array->items)*data_array->shape[0]);
+            if (data->vector_data[k].data == NULL)
+            {
+                return DX_MEMORY_ERROR;
+            }
+                // copydata
+            memcpy(data->vector_data[k].data,data_array->data,nbytes*(data_array->items)*data_array->shape[0]);
+            data->vector_data[k].type = data_array->type;
+            strncpy(data->vector_data[k].name,arrayObject->alias,DX_MAX_TOKEN_LENGTH);
+            data->numVectors;
+        }
+    }
+    return DX_SUCCESS;
+}
+
+
+
+/**
+ * @brief converts a dx file to a vtk file
+ * @detials deteremines from the field infomation (e.g., positions, connections etc)
+ * the type of vtk data to use.
+ * @param dxf dx file pointer
+ * @param vtkf vtk file pointer
+ *
+ */
+int dxFile2vtkDataFiles(dxFile *dxf, vtkDataFile ***vtkf, int * numFiles)
+{
+    int i,j,k;
+    int numFields;
+    object * obj;
+    object * positions;
+    object * connections;
+    
+    object ** fieldObjects;
+    series * seriesHeader;
+    group * groupHeader;
+
+    vtkDataFile **vtkFiles;
+
+    seriesHeader = NULL;
+    groupHeader = NULL;
+
+
+    numFields = 1; 
+    // check if any groups or series data exists
+    // Assumption: only one group or one series may exist in a single file
+    for (i=0;i<dxf->numObjects;i++)
+    {
+        if (dxf->objs[i].class == DX_SERIES)
+        {
+            seriesHeader = (series *)dxf->objs[i].obj;
+            numFields = seriesHeader->numMembers;
+            break;
+        }
+        else if (dxf->objs[i].class == DX_GROUP)
+        {
+            numFields = groupHeader->numMembers;
+            groupHeader = (group *)dxf->objs[i].obj;
+            break;
+        }
+    }
+    // allocate memeory for field pointers
+    fieldObjects = (object **)malloc(numFields*sizeof(object*));
+    if (fieldObjects == NULL)
     {
         return DX_MEMORY_ERROR;
     }
 
-    // reset to use as an index
-    j = 0;
-    k = 0;
-    // convert all data objects
-    /** @todo now that attributes are parsed I could distingish between position
-     * and connection data
-     */
-    for (i=0;i<fld->numComponents;i++)
+    // allocate memory for vtkdatafile structures
+    vtkFiles = (vtkDataFile **)malloc(numFields*sizeof(vtkFiles));
+    if (vtkFiles == NULL)
     {
-        object * comp;
-        comp = fld->components[i];
-        if (streq(comp->alias,"positions"))
-        {
-            pos = comp;
-        }
-        else if (streq(comp->alias,"connections"))
-        {
-            con = comp;
-        }
-        if (!(streq(comp->alias,"positions") || streq(comp->alias,"connections")))
-        {
-            array * data_array;
-            size_t nbytes;
-            data_array = (array *)comp->obj;
-      
-            switch(data_array->type)
-            {
-                case DX_INT:
-                    nbytes = DX_INT_SIZE;
-                    break;
-                case DX_FLOAT:
-                    nbytes = DX_FLOAT_SIZE;
-                    break;
-            }
+        return DX_MEMORY_ERROR;
+    }
 
-            if (data_array->rank == 0)
+    for (i=0;i<numFields;i++)
+    {
+        vtkFiles[i] = (vtkDataFile *)malloc(sizeof(vtkDataFile));
+        if (vtkFiles[i] == NULL)
+        {
+            return DX_MEMORY_ERROR;
+        }
+        vtkFiles[i]->pointdata = (vtkData *)malloc(sizeof(vtkData));
+        if (vtkFiles[i]->pointdata == NULL)
+        {
+            return DX_MEMORY_ERROR;
+        }
+        vtkFiles[i]->celldata = (vtkData *)malloc(sizeof(vtkData));
+        if (vtkFiles[i]->celldata == NULL)
+        {
+            return DX_MEMORY_ERROR;
+        }
+    }
+
+    // get the list of fields to convert
+    if (seriesHeader != NULL)
+    {
+        for (i=0;i<seriesHeader->numMembers;i++)
+        {
+            fieldObjects[i] = seriesHeader->members[i];
+        }
+    }
+    else if (groupHeader != NULL)
+    {
+        for (i=0;i<groupHeader->numMembers;i++)
+        {
+            fieldObjects[i] = groupHeader->members[i];
+        }
+    }
+    else
+    {
+        // no groups or series, so there must just be a lone field
+        for (i=0;i<dxf->numObjects;i++)
+        {
+            if (dxf->objs[i].class == DX_FIELD)
             {
-                vtkf->pointdata->scalar_data[j].data = malloc(nbytes*numPoints);
-                if (vtkf->pointdata->scalar_data[j].data == NULL)
-                {
-                    return DX_MEMORY_ERROR;
-                }
-                // copydata
-                memcpy(vtkf->pointdata->scalar_data[j].data,data_array->data,nbytes*numPoints);
-                vtkf->pointdata->scalar_data[j].type = data_array->type;
-                strncpy(vtkf->pointdata->scalar_data[j].name,comp->alias,DX_MAX_TOKEN_LENGTH);
-                j++;
-            }
-            else if (data_array->rank == 1 && data_array->shape[0] == 3)
-            {
-                vtkf->pointdata->vector_data[k].data = malloc(nbytes*numPoints*data_array->shape[0]);
-                if (vtkf->pointdata->vector_data[k].data == NULL)
-                {
-                    return DX_MEMORY_ERROR;
-                }
-                // copydata
-                memcpy(vtkf->pointdata->vector_data[k].data,data_array->data,nbytes*numPoints*data_array->shape[0]);
-                vtkf->pointdata->vector_data[k].type = data_array->type;
-                strncpy(vtkf->pointdata->vector_data[k].name,comp->alias,DX_MAX_TOKEN_LENGTH);
-                k++;
+                fieldObjects[0] = &(dxf->objs[i]);        
             }
         }
     }
+
+    // now do the conversions
+    for (i=0;i<numFields;i++)
+    {
+        int rc;
+        field * fieldHeader;
+        // store the header info
+        sprintf(vtkFiles[i]->vtkVersion,"%s",VTK_VERSION);
+        sprintf(vtkFiles[i]->title,"Converted from OpenDX file %s field %d\n",dxf->filename,fieldObjects[i]->name);
+    
+        /** @todo for now only support ASCII vtk file (need to change this later)*/
+        vtkFiles[i]->dataType = VTK_ASCII;
+        vtkFiles[i]->pointdata->numScalars = 0;
+        vtkFiles[i]->pointdata->numVectors = 0;
+#ifdef DEBUG
+        printf("VTK file header [file %d of %d]\n",i,numFiles);
+        printf("\t# vtk DataFile Version %s\n",vtkFiles[i]->vtkVersion);
+        printf("\t%s\n",vtkFiles[i]->title);
+#endif
+
+        rc = dxField2VTKDataSet(fieldObjects[i], vtkFiles[i]);
+        if (rc != DX_SUCCESS)
+        {
+            return rc;
+        }
+        
+        // allocate memory for pointt data
+        vtkFiles[i]->pointdata->scalar_data = (scalar *)malloc((vtkFiles[i]->pointdata->numScalars)*sizeof(scalar));
+        vtkFiles[i]->pointdata->vector_data = (vector *)malloc((vtkFiles[i]->pointdata->numVectors)*sizeof(vector));
+        if (vtkFiles[i]->pointdata->scalar_data == NULL || vtkFiles[i]->pointdata->vector_data == NULL)
+        {
+            return DX_MEMORY_ERROR;
+        }
+
+        // convert each component 
+        fieldHeader = (field *)(fieldObjects[i]->obj);
+        for (j=0;j<fieldHeader->numComponents;i++)
+        {
+            if (fieldHeader->components[i]->class == DX_ARRAY)
+            {
+                attribute * attr;
+                attr = GetAttribute(fieldHeader->components[i],"dep");
+                if (streq(attr->string,"positions"))
+                {
+                    rc = dxArray2vtkData(fieldHeader->components[i],vtkFiles[i]->pointdata);
+                }
+                else if (streq(attr->string,"connections"))
+                {
+                    rc = dxArray2vtkData(fieldHeader->components[i],vtkFiles[i]->celldata);
+                }
+
+                if (rc != DX_SUCCESS)
+                {
+                    return rc;
+                }
+            }
+        }
+    }
+
+    
+    *vtkf = vtkFiles;
+    *numFiles = numFields;
 
     return DX_SUCCESS;
 }
@@ -314,23 +524,28 @@ int main(int argc, char ** argv)
         exit(1);
     }
 
-    printf(" num objects %d\n",input.numObjects);
-    for(i=0;i<input.numObjects;i++)
-    {
-        printf("name %d [%s]\n",i,input.objs[i].name);
-    }
-    
+
     if ((rc = DX_LoadAll(&input)) != DX_SUCCESS)
     {
         fprintf(stderr,"Error: Could not Load DX file contents [code: %d]\n",rc);
         exit(1);
     }
 
+printf(" num objects %d\n",input.numObjects);
+#ifdef DEBUG
+    for(i=0;i<input.numObjects;i++)
+    {
+        printf("name %d [%s]\n",i,input.objs[i].name);
+        PrintObjectHeader(&(input.objs[i]));
+    }
+    exit(0);
+#endif
+
     DX_Close(&input);
 
     // do conversion
-
-    if ((rc = dxFile2vtkDataFile(&input, &output)) != DX_SUCCESS)
+    // @todo modify to convert multiple files
+    /*if ((rc = dxFile2vtkDataFile(&input, &output)) != DX_SUCCESS)
     {
         fprintf(stderr,"Error: Conversion failed [code %d]\n",rc);
         exit(1);
@@ -339,7 +554,7 @@ int main(int argc, char ** argv)
     vtkfilename = argv[2];
     VTK_Open(&output,vtkfilename);
     VTK_Write(&output);
-    VTK_Close(&output);
+    VTK_Close(&output);*/
 }
 
 

@@ -3,8 +3,8 @@
 INSTALLDIR = /usr/local/bin
 
 CC = gcc
-#COPTS = -g -DDEBUG
-COPTS = -O2
+COPTS = -g -DDEBUG
+#COPTS = -O2
 SRC = dxFileReader.c vtkFileWriter.c dx2vtk.c ioutils.c
 OBJS = $(SRC:.c=.o)
 INC = 
