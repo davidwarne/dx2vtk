@@ -917,6 +917,23 @@ int LoadArrayData(object *obj,dxFile *file)
                 }
                 header->data = malloc(nbytes*(header->items));
                 fread(header->data,nbytes,header->items,fp);
+                // check if the endianess is the different
+                if (header->endian == DX_MSB)
+                {
+                    uint32_t *data32 = (uint32_t *)header->data;
+                    for (i=0;i<size*(header->items);i++)
+                    {
+                        data32[i] = be32toh(data32[i]);
+                    }
+                }
+                else if (header->endian == DX_LSB)
+                {
+                    uint32_t *data32 = (uint32_t *)header->data;
+                    for (i=0;i<size*(header->items);i++)
+                    {
+                        data32[i] = le32toh(data32[i]);
+                    }
+                }
                 fclose(fp);
             }
             else

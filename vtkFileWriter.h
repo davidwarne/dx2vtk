@@ -54,8 +54,13 @@
 
 #define VTK_VERSION "4.2"
 
+#define VTK_TITLE_LENGTH 256
+#define VTK_DIM 3
+
 #define VTK_INT 0
 #define VTK_FLOAT 1
+
+#define VTK_SUCCESS 1
 
 typedef struct vtkDataFile_struct vtkDataFile;
 typedef struct unstructuredGrid_struct unstructuredGrid;
@@ -86,6 +91,7 @@ struct vtkData_struct {
     int numTextureCoords;
     int numTensors;
     int numFields;
+    int size;
     /** @todo for now only support scalars and vectors */
     scalar *scalar_data;
     vector *vector_data;
@@ -94,7 +100,7 @@ struct vtkData_struct {
 struct vtkDataFile_struct {
     FILE *fp;
     char vtkVersion[4]; /*header version*/
-    char title[256]; /**/
+    char title[VTK_TITLE_LENGTH]; /**/
     unsigned char dataType; 
     unsigned char geometry;
     void * dataset;
@@ -103,13 +109,13 @@ struct vtkDataFile_struct {
 };
 
 struct structuredPoints_struct {
-    int dimensions[3];
-    float origin[3];
-    float spacing[3];
+    int dimensions[VTK_DIM];
+    float origin[VTK_DIM];
+    float spacing[VTK_DIM];
 };
 
 struct structuredGrid_struct {
-    int dimensions[3];
+    int dimensions[VTK_DIM];
     int numPoints;
     float *points; // numpoints*3;
 };
@@ -123,7 +129,7 @@ struct polydata_struct{
 };
 
 struct rectilinearGrid_struct{
-    int dimensions[3];
+    int dimensions[VTK_DIM];
     int numX;
     int numY;
     int numZ;
@@ -146,5 +152,9 @@ struct unstructuredGrid_struct{
 /*function prototypes  */
 int VTK_Open(vtkDataFile *file, char * filename);
 int VTK_Write(vtkDataFile *file);
+int VTK_WriteUnstructuredGrid(FILE *fp,unstructuredGrid *ug);
+int VTK_WritePolydata(FILE *fp,polydata *pd);
+int VTK_WriteStructuredPoints(FILE *fp,structuredPoints *sp);
+int VTK_WriteData(FILE *fp,vtkData *data);
 int VTK_Close(vtkDataFile*file);
 #endif

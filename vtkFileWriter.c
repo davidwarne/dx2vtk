@@ -20,8 +20,7 @@ int VTK_Open(vtkDataFile *file, char * filename)
  */
 int VTK_Write(vtkDataFile *file)
 {
-    int numPoints;
-    int numCells;
+    int rc;
     // write the header and title
     fprintf(file->fp,"# vtk DataFile Version %s\n",file->vtkVersion);
     fprintf(file->fp,"%s",file->title);
@@ -40,157 +39,226 @@ int VTK_Write(vtkDataFile *file)
     switch(file->geometry)
     {
         case VTK_POLYDATA:
-        {
-            int i,j,t;
-            int size;
-            fprintf(file->fp,"POLYDATA\n");
-            polydata * data = (polydata *)file->dataset;
-            /**@todo assert that points are floats */
-            fprintf(file->fp,"POINTS %d float\n",data->numPoints);
-            for (i=0;i<data->numPoints;i++)
-            {
-                fprintf(file->fp,"%f %f %f\n",data->points[i*3],data->points[i*3+1],data->points[i*3 +2]);
-            }
-
-            size = data->numPolygons;
-            for (i=0;i<data->numPolygons;i++)
-            {
-                size += data->numVerts[i];
-            }
-            
-            fprintf(file->fp,"POLYGONS %d %d\n",data->numPolygons,size);
-            t=0;
-            for (i=0;i<data->numPolygons;i++)
-            {
-                fprintf(file->fp,"%d",data->numVerts[i]);
-                for (j=t;j<(t+data->numVerts[i]);j++)
-                {
-                    fprintf(file->fp," %d",data->polygons[j]);
-                }
-                fprintf(file->fp,"\n");
-                t=j;
-            }
-            numPoints = data->numPoints;
-            numCells = data->numPolygons;
-        }
+            rc = VTK_WritePolydata(file->fp,(polydata *)file->dataset);
             break;
         case VTK_UNSTRUCTURED_GRID:
-        {
-            int i,j,t;
-            int size;
-            fprintf(file->fp,"UNSTRUCTURED_GRID\n");
-            unstructuredGrid *data = (unstructuredGrid *) file->dataset;
-            fprintf(file->fp,"POINTS %d float\n",data->numPoints);
-            for (i=0;i<(data->numPoints);i++)
-            {
-                fprintf(file->fp,"%f %f %f\n",data->points[i*3],data->points[i*3+1],data->points[i*3+2]);
-            }
-
-            size = data->numCells;
-            for (i=0;i<(data->numCells);i++)
-            {
-                size += data->numVerts[i];
-            }
-
-            fprintf(file->fp,"CELLS %d %d\n",data->numCells,size);
-            t=0;
-            for (i=0;i<(data->numCells);i++)
-            {
-                fprintf(file->fp,"%d",data->numVerts[i]);
-                for (j=t;j<(t+data->numVerts[i]);j++)
-                {
-                    fprintf(file->fp," %d",data->cells[j]);
-                }
-                fprintf(file->fp,"\n");
-                t=j;
-            }
-            fprintf(file->fp,"CELL_TYPES %d\n",data->numCells);
-            for (i=0;i<(data->numCells);i++)
-            {
-                fprintf(file->fp,"%d\n",data->cellTypes[i]);
-            }
-            numPoints = data->numPoints;
-            numCells = data->numCells;
-        }
+            rc = VTK_WriteUnstructuredGrid(file->fp,(unstructuredGrid *)file->dataset);
             break;
+        case VTK_STRUCTURED_POINTS:
+            rc = VTK_WriteStructuredPoints(file->fp,(structuredPoints *)file->dataset);
+            break;
+    }
+
+    if (rc != VTK_SUCCESS)
+    {
+        return rc;
     }
     
     // now write the point data and cell data
-    if (file->pointdata != NULL)
+    if (file->pointdata->size > 0)
     {
-        int i;
-        fprintf(file->fp,"POINT_DATA %d\n",numPoints);
-        // write scalar data
-        for (i=0;i<(file->pointdata->numScalars);i++)
-        {
-            int j;
-            scalar * sd;
-            sd = &(file->pointdata->scalar_data[i]);
-            // print the header
-            switch (sd->type)
-            {
-                case VTK_INT:
-                {
-                    int * datai = (int *)(sd->data);
-                    fprintf(file->fp,"SCALARS %s int\nLOOKUP_TABLE default\n",sd->name);
-                    for (j=0;j<numPoints;j++)
-                    {
-                        fprintf(file->fp,"%d\n",datai[j]);
-                    }
-                }
-                    break;
-                case VTK_FLOAT:
-                {
-                    float * dataf = (float *)(sd->data);
-                    fprintf(file->fp,"SCALARS %s float\nLOOKUP_TABLE default\n",sd->name);
-                    for (j=0;j<numPoints;j++)
-                    {
-                        fprintf(file->fp,"%f\n",dataf[j]);
-                    }
-                }
-                    break;                    
-            }
-        }
-
-        // write vector data
-        for (i=0;i<(file->pointdata->numVectors);i++)
-        {
-            int j;
-            vector *vd;
-            vd = &(file->pointdata->vector_data[i]);
-
-            switch (vd->type)
-            {
-                case VTK_INT:
-                {
-                    int * datai = (int *)(vd->data);
-                    fprintf(file->fp,"VECTORS %s int\n",vd->name);
-                    for (j=0;j<numPoints;j++)
-                    {
-                        fprintf(file->fp,"%d %d %d\n",datai[j*3],datai[j*3+1],datai[j*3+2]);
-                    }
-                }
-                    break;
-                case VTK_FLOAT:
-                {
-                    float * dataf = (float *)(vd->data);
-                    fprintf(file->fp,"VECTORS %s float\n",vd->name);
-                    for (j=0;j<numPoints;j++)
-                    {
-                        fprintf(file->fp,"%f %f %f\n",dataf[j*3],dataf[j*3+1],dataf[j*3+2]);
-                    }
-                }
-                    break;                    
-            }
-
-        }
+        fprintf(file->fp,"\nPOINT_DATA ");
+        rc = VTK_WriteData(file->fp,file->pointdata);
     }
 
-    if (file->celldata != NULL)
+    if (file->celldata->size > 0)
     {
+        fprintf(file->fp,"\nCELL_DATA ");
+        rc = VTK_WriteData(file->fp,file->celldata);
     }
+    if (rc != VTK_SUCCESS)
+    {
+        return rc;
+    }
+
+    return VTK_SUCCESS;
+}
+/**
+ * @brief writes a VTK unstructured grid to the file ouput stream
+ * @param fp the file output stream
+ * @param ug the unstructured grid
+ */
+int VTK_WriteUnstructuredGrid(FILE *fp,unstructuredGrid *ug)
+{
+    int i,j,t;
+    int size;
+    fprintf(fp,"UNSTRUCTURED_GRID\n");
+    fprintf(fp,"POINTS %d float\n",ug->numPoints);
+    for (i=0;i<(ug->numPoints);i++)
+    {
+        fprintf(fp,"%f %f %f\n",ug->points[i*3],ug->points[i*3+1],ug->points[i*3+2]);
+    }
+
+    size = ug->numCells;
+    for (i=0;i<(ug->numCells);i++)
+    {
+        size += ug->numVerts[i];
+    }
+
+    fprintf(fp,"CELLS %d %d\n",ug->numCells,size);
+    t=0;
+    for (i=0;i<(ug->numCells);i++)
+    {
+        fprintf(fp,"%d",ug->numVerts[i]);
+        for (j=t;j<(t+ug->numVerts[i]);j++)
+        {
+            fprintf(fp," %d",ug->cells[j]);
+        }
+        fprintf(fp,"\n");
+        t=j;
+    }
+    fprintf(fp,"CELL_TYPES %d\n",ug->numCells);
+    for (i=0;i<(ug->numCells);i++)
+    {
+        fprintf(fp,"%d\n",ug->cellTypes[i]);
+    }
+    return VTK_SUCCESS;
 }
 
+/**
+ * @brief writes a VTK poly data mesh to the file output stream
+ * @param fp the file output stream
+ * @param pd the polydata mesh
+ */
+int VTK_WritePolydata(FILE *fp,polydata *pd)
+{
+    int i,j,t;
+    int size;
+    fprintf(fp,"POLYDATA\n");
+    /**@todo assert that points are floats */
+    fprintf(fp,"POINTS %d float\n",pd->numPoints);
+    for (i=0;i<pd->numPoints;i++)
+    {
+        fprintf(fp,"%f %f %f\n",pd->points[i*3],pd->points[i*3+1],pd->points[i*3 +2]);
+    }
+
+    size = pd->numPolygons;
+    for (i=0;i<pd->numPolygons;i++)
+    {
+        size += pd->numVerts[i];
+    }
+            
+    fprintf(fp,"POLYGONS %d %d\n",pd->numPolygons,size);
+    t=0;
+    for (i=0;i<pd->numPolygons;i++)
+    {
+        fprintf(fp,"%d",pd->numVerts[i]);
+        for (j=t;j<(t+pd->numVerts[i]);j++)
+        {
+            fprintf(fp," %d",pd->polygons[j]);
+        }
+        fprintf(fp,"\n");
+        t=j;
+    }
+
+    return VTK_SUCCESS;
+}
+
+/**
+ * @brief wriets a VTK structured point mesh
+ * @param fp the output file stream
+ * @param the structured point mesh
+ */
+int VTK_WriteStructuredPoints(FILE *fp,structuredPoints *sp)
+{
+    int i;
+    fprintf(fp,"STRUCTURED_POINTS\n");
+    fprintf(fp,"DIMENSIONS");
+    for (i=0;i<VTK_DIM;i++)
+    {
+        fprintf(fp," %d",sp->dimensions[i]);
+    }
+    fprintf(fp,"\nORIGIN");
+    for (i=0;i<VTK_DIM;i++)
+    {
+        fprintf(fp," %f",sp->origin[i]);
+    }
+    fprintf(fp,"\nSPACING");
+    for (i=0;i<VTK_DIM;i++)
+    {
+        fprintf(fp," %f",sp->spacing[i]);
+    }
+    return VTK_SUCCESS;
+}
+
+/**
+ * @brief writes VTK data attributes (i.e., point or cell data)
+ * @param fp the ouptut file stream
+ * @param data the vtkData struct
+ */
+int VTK_WriteData(FILE *fp,vtkData *data)
+{
+    int i;
+    fprintf(fp,"%d\n",data->size);
+#ifdef DEBUG
+    printf("writing %d numScalars %d numVectors %d\n",data->size,data->numScalars,data->numVectors);
+#endif
+    // write scalar data
+    for (i=0;i<(data->numScalars);i++)
+    {
+        int j;
+        scalar * sd;
+        sd = &(data->scalar_data[i]);
+        // print the header
+        switch (sd->type)
+        {
+            case VTK_INT:
+            {
+                int * datai = (int *)(sd->data);
+                fprintf(fp,"SCALARS %s int\nLOOKUP_TABLE default\n",sd->name);
+                for (j=0;j<data->size;j++)
+                {
+                    fprintf(fp,"%d\n",datai[j]);
+                }
+            }
+                break;
+            case VTK_FLOAT:
+            {
+                float * dataf = (float *)(sd->data);
+                fprintf(fp,"SCALARS %s float\nLOOKUP_TABLE default\n",sd->name);
+                for (j=0;j<data->size;j++)
+                {
+                    fprintf(fp,"%f\n",dataf[j]);
+                }
+            }
+                break;                    
+        }
+    }
+
+    // write vector data
+    for (i=0;i<(data->numVectors);i++)
+    {
+        int j;
+        vector *vd;
+        vd = &(data->vector_data[i]);
+        switch (vd->type)
+        {
+            case VTK_INT:
+            {
+                int * datai = (int *)(vd->data);
+                fprintf(fp,"VECTORS %s int\n",vd->name);
+                for (j=0;j<data->size;j++)
+                {
+                    fprintf(fp,"%d %d %d\n",datai[j*3],datai[j*3+1],datai[j*3+2]);
+                }
+            }
+                break;
+            case VTK_FLOAT:
+            {
+                float * dataf = (float *)(vd->data);
+                fprintf(fp,"VECTORS %s float\n",vd->name);
+                for (j=0;j<data->size;j++)
+                {
+                    fprintf(fp,"%f %f %f\n",dataf[j*3],dataf[j*3+1],dataf[j*3+2]);
+                }
+            }
+                break;                    
+        }
+    }
+
+    return VTK_SUCCESS;
+
+}
 /**
  * @brief closes the vtk file
  */

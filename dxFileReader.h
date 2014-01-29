@@ -17,6 +17,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <endian.h>
+#include <stdint.h> 
 #include "ioutils.h"
 
 // buffer sizes
