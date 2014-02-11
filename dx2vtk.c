@@ -349,7 +349,7 @@ int dxArray2vtkData(object *arrayObject, vtkData* data)
  * @param vtkf vtk file pointer
  *
  */
-int dxFile2vtkDataFiles(dxFile *dxf, vtkDataFile ***vtkf, int * numFiles)
+int dxFile2vtkDataFiles(dxFile *dxf, vtkDataFile ***vtkf, int * numFiles,char type)
 {
     int i,j,k;
     int numFields;
@@ -460,8 +460,7 @@ int dxFile2vtkDataFiles(dxFile *dxf, vtkDataFile ***vtkf, int * numFiles)
         sprintf(vtkFiles[i]->vtkVersion,"%s",VTK_VERSION);
         sprintf(vtkFiles[i]->title,"Converted from OpenDX file %s field %s\n",dxf->filename,fieldObjects[i]->name);
     
-        /** @todo for now only support ASCII vtk file (need to change this later)*/
-        vtkFiles[i]->dataType = VTK_ASCII;
+        vtkFiles[i]->dataType = type;
         vtkFiles[i]->pointdata->numScalars = 0;
         vtkFiles[i]->pointdata->numVectors = 0;
         vtkFiles[i]->celldata->numVectors = 0;
@@ -542,9 +541,9 @@ int main(int argc, char ** argv)
     numFiles = 0;
     output = NULL;
     
-    if (argc != 3)
+    if (argc < 3)
     {
-        fprintf(stderr,"Usage: dx2vtk filename.dx filename.vtk\n");
+        fprintf(stderr,"Usage: dx2vtk filename.dx filename.vtk [ASCII | BINARY]\n");
         exit(1);
     }
 
@@ -573,9 +572,27 @@ printf(" num objects %d\n",input.numObjects);
 
     DX_Close(&input);
 
-    // do conversion
-    rc = dxFile2vtkDataFiles(&input, &output, &numFiles);
-
+    if (argc == 4)
+    {
+        if (streq(argv[3],"ASCII"))
+        {
+            // do conversion
+            rc = dxFile2vtkDataFiles(&input, &output, &numFiles,VTK_ASCII);
+        }
+        else if (streq(argv[3],"BINARY"))
+        {
+            rc = dxFile2vtkDataFiles(&input, &output, &numFiles,VTK_BINARY);
+        }
+        else
+        {
+            fprintf(stderr,"Usage: dx2vtk filename.dx filename.vtk [ASCII | BINARY]\n");
+            exit(1);
+        }
+    }
+    else
+    {
+        rc = dxFile2vtkDataFiles(&input, &output, &numFiles,VTK_TYPE_DEFAULT);
+    }
     if (rc != DX_SUCCESS)
     {
         fprintf(stderr,"Error: Conversion failed [code %d]\n",rc);

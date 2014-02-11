@@ -3,12 +3,12 @@
 INSTALLDIR = /usr/local/bin
 
 CC = gcc
-COPTS = -g -DDEBUG
-#COPTS = -O2
+#COPTS = -g -DDEBUG
+COPTS = -O2
 SRC = dxFileReader.c vtkFileWriter.c dx2vtk.c
 OBJS = $(SRC:.c=.o)
-INC = -I../ioutils
-LIB = -lm -L../ioutils -lioutils
+INC = -I/usr/local/include/ioutils
+LIB = -lm -L/usr/local/lib/ioutils -lioutils
 BINARY = dx2vtk
 
 all:

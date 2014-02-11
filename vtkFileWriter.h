@@ -17,10 +17,35 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <endian.h>
 
 /*data types*/
 #define VTK_ASCII 0
 #define VTK_BINARY 1
+
+#define H2BE32(buf,size)              \
+{                                     \
+    int iii;                          \
+    uint32_t * buf32;                 \
+    buf32 = (uint32_t *)(buf);        \
+    for(iii=0;iii<(size);iii++)       \
+    {                                 \
+        buf32[iii] = htobe32(buf32[iii]); \
+    }                                 \
+}                                     \
+
+#define BE2H32(buf,size)              \
+{                                     \
+    int iii;                          \
+    uint32_t * buf32;                 \
+    buf32 = (uint32_t *)(buf);        \
+    for(iii=0;iii<(size);iii++)       \
+    {                                 \
+        buf32[iii] = be32toh(buf32[iii]); \
+    }                                 \
+}                                     \
+
 
 /*geometry*/
 #define VTK_STRUCTURED_POINTS 0
@@ -60,7 +85,19 @@
 #define VTK_INT 0
 #define VTK_FLOAT 1
 
-#define VTK_SUCCESS 1
+
+#define VTK_SUCCESS                  1
+#define VTK_MEMORY_ERROR             0
+#define VTK_FILE_NOT_FOUND_ERROR     -1
+#define VTK_INVALID_FILE_ERROR       -2
+#define VTK_NOT_SUPPORTED_ERROR      -3
+#define VTK_INVALID_USAGE_ERROR      -4
+#define VTK_NOT_IMPLEMENTED_YET_ERROR -5
+#define VTK_FILE_ERROR -6
+
+#ifndef VTK_TYPE_DEFAULT
+#define VTK_TYPE_DEFAULT VTK_ASCII
+#endif
 
 typedef struct vtkDataFile_struct vtkDataFile;
 typedef struct unstructuredGrid_struct unstructuredGrid;
@@ -152,9 +189,9 @@ struct unstructuredGrid_struct{
 /*function prototypes  */
 int VTK_Open(vtkDataFile *file, char * filename);
 int VTK_Write(vtkDataFile *file);
-int VTK_WriteUnstructuredGrid(FILE *fp,unstructuredGrid *ug);
-int VTK_WritePolydata(FILE *fp,polydata *pd);
-int VTK_WriteStructuredPoints(FILE *fp,structuredPoints *sp);
-int VTK_WriteData(FILE *fp,vtkData *data);
+int VTK_WriteUnstructuredGrid(FILE *fp,unstructuredGrid *ug,char type);
+int VTK_WritePolydata(FILE *fp,polydata *pd,char type);
+int VTK_WriteStructuredPoints(FILE *fp,structuredPoints *sp,char type);
+int VTK_WriteData(FILE *fp,vtkData *data,char type);
 int VTK_Close(vtkDataFile*file);
 #endif
