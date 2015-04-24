@@ -1,0 +1,12 @@
+dx2vtk
+
+Description:
+------------
+An OpenDX to VTK Legacy format version 4.2 file converter.
+
+Author Information:
+-------------------
+    Name: David J. Warne
+          High Performance Computing and Research Support,
+          Queensland University of Technology
+    Email: david.warne@qut.edu.au

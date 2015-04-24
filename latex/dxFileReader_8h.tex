@@ -1,0 +1,595 @@
+\hypertarget{dxFileReader_8h}{
+\section{dxFileReader.h File Reference}
+\label{dxFileReader_8h}\index{dxFileReader.h@{dxFileReader.h}}
+}
+
+
+Reads an OpenDX data file.  
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$string.h$>$}\par
+{\ttfamily \#include $<$endian.h$>$}\par
+{\ttfamily \#include $<$stdint.h$>$}\par
+{\ttfamily \#include \char`\"{}ioutils.h\char`\"{}}\par
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structobject__struct}{object\_\-struct}
+\item 
+struct \hyperlink{structarray__struct}{array\_\-struct}
+\item 
+struct \hyperlink{structattribute__struct}{attribute\_\-struct}
+\item 
+struct \hyperlink{structfield__struct}{field\_\-struct}
+\item 
+struct \hyperlink{structgroup__struct}{group\_\-struct}
+\item 
+struct \hyperlink{structgridpositions__struct}{gridpositions\_\-struct}
+\item 
+struct \hyperlink{structgridconnections__struct}{gridconnections\_\-struct}
+\item 
+struct \hyperlink{structseries__struct}{series\_\-struct}
+\item 
+struct \hyperlink{structdxFile__struct}{dxFile\_\-struct}
+\end{DoxyCompactItemize}
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{dxFileReader_8h_a645e1f2c7103fc95495ae83d64cb8dcd}{
+\#define {\bfseries DX\_\-MAX\_\-FILENAME\_\-LENGTH}~256}
+\label{dxFileReader_8h_a645e1f2c7103fc95495ae83d64cb8dcd}
+
+\item 
+\hypertarget{dxFileReader_8h_a2540a46493d2cf87a435e1a9578f4111}{
+\#define {\bfseries DX\_\-MAX\_\-TOKEN\_\-LENGTH}~32}
+\label{dxFileReader_8h_a2540a46493d2cf87a435e1a9578f4111}
+
+\item 
+\hypertarget{dxFileReader_8h_a6bf6ba61eb77068e20e8252ac10f9eb7}{
+\#define {\bfseries DX\_\-MAX\_\-MESH\_\-DIMENSIONS}~6}
+\label{dxFileReader_8h_a6bf6ba61eb77068e20e8252ac10f9eb7}
+
+\item 
+\hypertarget{dxFileReader_8h_a139e89fdfcfe1f7363e58a0373f44164}{
+\#define {\bfseries DX\_\-COMMENT\_\-LENGTH}~256}
+\label{dxFileReader_8h_a139e89fdfcfe1f7363e58a0373f44164}
+
+\item 
+\hypertarget{dxFileReader_8h_af1649ae221f826bf0c6732bf5ec80b3c}{
+\#define {\bfseries DX\_\-READ\_\-BUFFER\_\-SIZE}~2048}
+\label{dxFileReader_8h_af1649ae221f826bf0c6732bf5ec80b3c}
+
+\item 
+\hypertarget{dxFileReader_8h_a57567f82655c87a6fde5111390d9f0e7}{
+\#define {\bfseries DX\_\-SUCCESS}~1}
+\label{dxFileReader_8h_a57567f82655c87a6fde5111390d9f0e7}
+
+\item 
+\hypertarget{dxFileReader_8h_ae890c76fb525a302f617340607e18e8d}{
+\#define {\bfseries DX\_\-MEMORY\_\-ERROR}~0}
+\label{dxFileReader_8h_ae890c76fb525a302f617340607e18e8d}
+
+\item 
+\hypertarget{dxFileReader_8h_ae4f2d9ecbc8695dd85872ea93e83f447}{
+\#define {\bfseries DX\_\-FILE\_\-NOT\_\-FOUND\_\-ERROR}~-\/1}
+\label{dxFileReader_8h_ae4f2d9ecbc8695dd85872ea93e83f447}
+
+\item 
+\hypertarget{dxFileReader_8h_aec0de646f7589e6cb75137b4d8006634}{
+\#define {\bfseries DX\_\-INVALID\_\-FILE\_\-ERROR}~-\/2}
+\label{dxFileReader_8h_aec0de646f7589e6cb75137b4d8006634}
+
+\item 
+\hypertarget{dxFileReader_8h_a3351c53fe289c3acab14e2b639f46f7d}{
+\#define {\bfseries DX\_\-NOT\_\-SUPPORTED\_\-ERROR}~-\/3}
+\label{dxFileReader_8h_a3351c53fe289c3acab14e2b639f46f7d}
+
+\item 
+\hypertarget{dxFileReader_8h_acac5d096cfe11160b3b7e451a5c58688}{
+\#define {\bfseries DX\_\-INVALID\_\-USAGE\_\-ERROR}~-\/4}
+\label{dxFileReader_8h_acac5d096cfe11160b3b7e451a5c58688}
+
+\item 
+\hypertarget{dxFileReader_8h_a79f70d45d2d0a6c53b376cbbb62f08dd}{
+\#define {\bfseries DX\_\-NOT\_\-IMPLEMENTED\_\-YET\_\-ERROR}~-\/5}
+\label{dxFileReader_8h_a79f70d45d2d0a6c53b376cbbb62f08dd}
+
+\item 
+\hypertarget{dxFileReader_8h_ad7dafb750c0cc6aef2b41bf7bda49b7a}{
+\#define {\bfseries DX\_\-FIELD}~0}
+\label{dxFileReader_8h_ad7dafb750c0cc6aef2b41bf7bda49b7a}
+
+\item 
+\hypertarget{dxFileReader_8h_a7dcdfa7b5cedf01ef0b40880d0e805cc}{
+\#define {\bfseries DX\_\-ATTRIBUTE}~1}
+\label{dxFileReader_8h_a7dcdfa7b5cedf01ef0b40880d0e805cc}
+
+\item 
+\hypertarget{dxFileReader_8h_a907d758c67275d00cc56b6fd5b1f4916}{
+\#define {\bfseries DX\_\-CONSTANTARRAY}~2}
+\label{dxFileReader_8h_a907d758c67275d00cc56b6fd5b1f4916}
+
+\item 
+\hypertarget{dxFileReader_8h_a81f99c823a8f99088f672abf13d5ad29}{
+\#define {\bfseries DX\_\-ARRAY}~3}
+\label{dxFileReader_8h_a81f99c823a8f99088f672abf13d5ad29}
+
+\item 
+\hypertarget{dxFileReader_8h_ada1c62ae3e11be71104161ded7848332}{
+\#define {\bfseries DX\_\-REGULARARRAY}~4}
+\label{dxFileReader_8h_ada1c62ae3e11be71104161ded7848332}
+
+\item 
+\hypertarget{dxFileReader_8h_ad125f534d2dc76da5834d8ac2565ec66}{
+\#define {\bfseries DX\_\-PRODUCTARRAY}~5}
+\label{dxFileReader_8h_ad125f534d2dc76da5834d8ac2565ec66}
+
+\item 
+\hypertarget{dxFileReader_8h_ab88a8ec06b6a5e5f70c38e2ff3b50b2b}{
+\#define {\bfseries DX\_\-GRIDPOSITIONS}~6}
+\label{dxFileReader_8h_ab88a8ec06b6a5e5f70c38e2ff3b50b2b}
+
+\item 
+\hypertarget{dxFileReader_8h_a203b28b322950b19c74dbbc984126936}{
+\#define {\bfseries DX\_\-PATHARRAY}~7}
+\label{dxFileReader_8h_a203b28b322950b19c74dbbc984126936}
+
+\item 
+\hypertarget{dxFileReader_8h_aea59e8b4b1d60c98370d5b17121edd89}{
+\#define {\bfseries DX\_\-MESHARRAY}~8}
+\label{dxFileReader_8h_aea59e8b4b1d60c98370d5b17121edd89}
+
+\item 
+\hypertarget{dxFileReader_8h_ac316a974edf1246185e34df992b14d7b}{
+\#define {\bfseries DX\_\-GRIDCONNECTIONS}~9}
+\label{dxFileReader_8h_ac316a974edf1246185e34df992b14d7b}
+
+\item 
+\hypertarget{dxFileReader_8h_a5ec05cb4070e4d5b5b01a6a32fb0a4fb}{
+\#define {\bfseries DX\_\-GROUP}~10}
+\label{dxFileReader_8h_a5ec05cb4070e4d5b5b01a6a32fb0a4fb}
+
+\item 
+\hypertarget{dxFileReader_8h_a63c4f8394f76b6a0c44521e05c91a0f2}{
+\#define {\bfseries DX\_\-SERIES}~11}
+\label{dxFileReader_8h_a63c4f8394f76b6a0c44521e05c91a0f2}
+
+\item 
+\hypertarget{dxFileReader_8h_a7b9b944ae11f219d60edd2b98dc8b38b}{
+\#define {\bfseries DX\_\-MAX\_\-RANK}~10}
+\label{dxFileReader_8h_a7b9b944ae11f219d60edd2b98dc8b38b}
+
+\item 
+\hypertarget{dxFileReader_8h_a1c037c9d806e4fe6ec51a6cf9b893845}{
+\#define {\bfseries DX\_\-INT}~0}
+\label{dxFileReader_8h_a1c037c9d806e4fe6ec51a6cf9b893845}
+
+\item 
+\hypertarget{dxFileReader_8h_acfe951a02c138fe158fa58ad2458e67b}{
+\#define {\bfseries DX\_\-FLOAT}~1}
+\label{dxFileReader_8h_acfe951a02c138fe158fa58ad2458e67b}
+
+\item 
+\hypertarget{dxFileReader_8h_a649996530d5d2cd55eddaa4283607b8e}{
+\#define {\bfseries DX\_\-INT\_\-SIZE}~4}
+\label{dxFileReader_8h_a649996530d5d2cd55eddaa4283607b8e}
+
+\item 
+\hypertarget{dxFileReader_8h_aacc96d884ff16f7eaf40a37ea34a26f6}{
+\#define {\bfseries DX\_\-FLOAT\_\-SIZE}~4}
+\label{dxFileReader_8h_aacc96d884ff16f7eaf40a37ea34a26f6}
+
+\item 
+\hypertarget{dxFileReader_8h_aeabed0880af673d447d6c1d7082a06ec}{
+\#define {\bfseries DX\_\-REAL}~0}
+\label{dxFileReader_8h_aeabed0880af673d447d6c1d7082a06ec}
+
+\item 
+\hypertarget{dxFileReader_8h_ad6997fa4974b1da408665c261bc008e9}{
+\#define {\bfseries DX\_\-COMPLEX}~1}
+\label{dxFileReader_8h_ad6997fa4974b1da408665c261bc008e9}
+
+\item 
+\hypertarget{dxFileReader_8h_a15b298a9c8c591dea2f6f594c7051dd2}{
+\#define {\bfseries DX\_\-LSB}~0}
+\label{dxFileReader_8h_a15b298a9c8c591dea2f6f594c7051dd2}
+
+\item 
+\hypertarget{dxFileReader_8h_a44b04660cc2c92a117f0e8b8b1443d03}{
+\#define {\bfseries DX\_\-MSB}~1}
+\label{dxFileReader_8h_a44b04660cc2c92a117f0e8b8b1443d03}
+
+\item 
+\hypertarget{dxFileReader_8h_aecf31eff0b5f13a3cf404d17bd11ee3a}{
+\#define {\bfseries DX\_\-TEXT}~0}
+\label{dxFileReader_8h_aecf31eff0b5f13a3cf404d17bd11ee3a}
+
+\item 
+\hypertarget{dxFileReader_8h_a12cdedb26071ef2e94bfd1506c6b1fb9}{
+\#define {\bfseries DX\_\-IEEE}~1}
+\label{dxFileReader_8h_a12cdedb26071ef2e94bfd1506c6b1fb9}
+
+\item 
+\hypertarget{dxFileReader_8h_a7672a21e8b750ab07e2eeec8dfc4cf71}{
+\#define {\bfseries DX\_\-BINARY}~2}
+\label{dxFileReader_8h_a7672a21e8b750ab07e2eeec8dfc4cf71}
+
+\item 
+\hypertarget{dxFileReader_8h_aeb96b516de32152ca919a838123746c9}{
+\#define {\bfseries DX\_\-ASCII}~3}
+\label{dxFileReader_8h_aeb96b516de32152ca919a838123746c9}
+
+\item 
+\hypertarget{dxFileReader_8h_a33c25d0a046523713486803925f26f7d}{
+\#define {\bfseries DX\_\-OFFSET}~0}
+\label{dxFileReader_8h_a33c25d0a046523713486803925f26f7d}
+
+\item 
+\hypertarget{dxFileReader_8h_a629e6ff674a04acceb9f5b724b900805}{
+\#define {\bfseries DX\_\-FILE}~1}
+\label{dxFileReader_8h_a629e6ff674a04acceb9f5b724b900805}
+
+\item 
+\hypertarget{dxFileReader_8h_a2d54373687ecd68fdf7b09200cad5949}{
+\#define {\bfseries DX\_\-FOLLOWS}~2}
+\label{dxFileReader_8h_a2d54373687ecd68fdf7b09200cad5949}
+
+\item 
+\hypertarget{dxFileReader_8h_a142287b2552d8354d673374eb4da4232}{
+\#define {\bfseries streq}(a, b)~(strcmp((a),(b)) == 0)}
+\label{dxFileReader_8h_a142287b2552d8354d673374eb4da4232}
+
+\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{dxFileReader_8h_a539c55552c171dd720d6135bba6afb15}{
+typedef struct \hyperlink{structobject__struct}{object\_\-struct} {\bfseries object}}
+\label{dxFileReader_8h_a539c55552c171dd720d6135bba6afb15}
+
+\item 
+\hypertarget{dxFileReader_8h_a85f948bd90b212236a45cad6430b3314}{
+typedef struct \hyperlink{structattribute__struct}{attribute\_\-struct} {\bfseries attribute}}
+\label{dxFileReader_8h_a85f948bd90b212236a45cad6430b3314}
+
+\item 
+\hypertarget{dxFileReader_8h_a46e7723cd7702eba4031b4e69a83126e}{
+typedef struct \hyperlink{structfield__struct}{field\_\-struct} {\bfseries field}}
+\label{dxFileReader_8h_a46e7723cd7702eba4031b4e69a83126e}
+
+\item 
+\hypertarget{dxFileReader_8h_ac36a7cec7706e0ad90c8d8fa9fba9d84}{
+typedef struct \hyperlink{structarray__struct}{array\_\-struct} {\bfseries array}}
+\label{dxFileReader_8h_ac36a7cec7706e0ad90c8d8fa9fba9d84}
+
+\item 
+\hypertarget{dxFileReader_8h_a56bd4a4acaeaa46f4bcc7bfe0bbca470}{
+typedef struct \hyperlink{structgroup__struct}{group\_\-struct} {\bfseries group}}
+\label{dxFileReader_8h_a56bd4a4acaeaa46f4bcc7bfe0bbca470}
+
+\item 
+\hypertarget{dxFileReader_8h_a48167c2e320e9805d0081bf78e206425}{
+typedef struct \hyperlink{structgridpositions__struct}{gridpositions\_\-struct} {\bfseries gridpositions}}
+\label{dxFileReader_8h_a48167c2e320e9805d0081bf78e206425}
+
+\item 
+\hypertarget{dxFileReader_8h_a2f44d27af3912ce77af7bdbe6ed25cb9}{
+typedef struct \hyperlink{structgridconnections__struct}{gridconnections\_\-struct} {\bfseries gridconnections}}
+\label{dxFileReader_8h_a2f44d27af3912ce77af7bdbe6ed25cb9}
+
+\item 
+\hypertarget{dxFileReader_8h_a9a991b72d30e2d3ca76e7cd721013e7c}{
+typedef struct \hyperlink{structseries__struct}{series\_\-struct} {\bfseries series}}
+\label{dxFileReader_8h_a9a991b72d30e2d3ca76e7cd721013e7c}
+
+\item 
+\hypertarget{dxFileReader_8h_a318a17a66cb5b4d952847cd7965897dd}{
+typedef struct \hyperlink{structdxFile__struct}{dxFile\_\-struct} {\bfseries dxFile}}
+\label{dxFileReader_8h_a318a17a66cb5b4d952847cd7965897dd}
+
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{dxFileReader_8h_ad9f4f70b8443f4636d3e17a338f6249a}{DX\_\-Open} (\hyperlink{structdxFile__struct}{dxFile} $\ast$file, const char $\ast$filename)
+\begin{DoxyCompactList}\small\item\em Opens an OpenDX file. \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_ad44596584aaad7e4601f67126fb0d4fe}{DX\_\-LoadAll} (\hyperlink{structdxFile__struct}{dxFile} $\ast$file)
+\begin{DoxyCompactList}\small\item\em loads objects into memory \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_ae63bdd1ebe58fab7d456329d2d99b951}{ParseObjectHeader} (\hyperlink{structobject__struct}{object} $\ast$obj, char $\ast$header)
+\begin{DoxyCompactList}\small\item\em Parses an object header. \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_a480d78f28f6859cd2862a6d6dd262159}{ParseArrayObjectHeader} (\hyperlink{structobject__struct}{object} $\ast$obj, char $\ast$header)
+\begin{DoxyCompactList}\small\item\em Parses an array object header. \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_a21a16699ec001047869342f0066a1688}{ParseFieldObjectHeader} (\hyperlink{structobject__struct}{object} $\ast$obj, char $\ast$header)
+\begin{DoxyCompactList}\small\item\em Parses a field object header. \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_af338e737afc816874212346e5c3f3b83}{ParseGroupObjectHeader} (\hyperlink{structobject__struct}{object} $\ast$obj, char $\ast$header)
+\begin{DoxyCompactList}\small\item\em Parses a group object header. \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_a74684f74bd864459d5432aad53e23076}{ParseGridPositionsObjectHeader} (\hyperlink{structobject__struct}{object} $\ast$obj, char $\ast$header)
+\begin{DoxyCompactList}\small\item\em Parses gridpositions object header. \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_aa20dc09c39ecab0142f3d60c1c6f6ab2}{ParseGridConnectionsObjectHeader} (\hyperlink{structobject__struct}{object} $\ast$obj, char $\ast$header)
+\begin{DoxyCompactList}\small\item\em Parses gridconnections object header. \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_a69b8fd1563c3479d7df29f98eff8f1b1}{ParseSeriesObjectHeader} (\hyperlink{structobject__struct}{object} $\ast$obj, char $\ast$header)
+\begin{DoxyCompactList}\small\item\em Parses series object header. \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_aefc3635312732236a3163d47a1126106}{LoadObjectData} (\hyperlink{structobject__struct}{object} $\ast$obj, \hyperlink{structdxFile__struct}{dxFile} $\ast$file)
+\begin{DoxyCompactList}\small\item\em loads object data \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_a2e4c4fdcab3e9aee43c33a05903d4e37}{LoadArrayData} (\hyperlink{structobject__struct}{object} $\ast$obj, \hyperlink{structdxFile__struct}{dxFile} $\ast$file)
+\begin{DoxyCompactList}\small\item\em loads array data \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_ab7ed8b7ca41b3b03a8cc0eb2c86b7192}{LoadFieldData} (\hyperlink{structobject__struct}{object} $\ast$obj, \hyperlink{structdxFile__struct}{dxFile} $\ast$file)
+\begin{DoxyCompactList}\small\item\em load field data \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_a2af7fadcb8a1d4c2d4a02f62095b978a}{LoadGroupData} (\hyperlink{structobject__struct}{object} $\ast$obj, \hyperlink{structdxFile__struct}{dxFile} $\ast$file)
+\begin{DoxyCompactList}\small\item\em loads group data \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_a5d0c87faf09d2252bdedcae8e8953fe2}{LoadGridPositionsData} (\hyperlink{structobject__struct}{object} $\ast$obj, \hyperlink{structdxFile__struct}{dxFile} $\ast$file)
+\begin{DoxyCompactList}\small\item\em loads girdpositions data \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_af13e9b313942c36aabd23b835571c7ab}{LoadGridConnectionsData} (\hyperlink{structobject__struct}{object} $\ast$obj, \hyperlink{structdxFile__struct}{dxFile} $\ast$file)
+\begin{DoxyCompactList}\small\item\em loads array data \item\end{DoxyCompactList}\item 
+int \hyperlink{dxFileReader_8h_a42f3f9c90a998085c2f9fb24e79f4166}{LoadSeriesData} (\hyperlink{structobject__struct}{object} $\ast$obj, \hyperlink{structdxFile__struct}{dxFile} $\ast$file)
+\begin{DoxyCompactList}\small\item\em loads series data \item\end{DoxyCompactList}\item 
+void \hyperlink{dxFileReader_8h_af9aac18ecc63537ffb93480162f4434b}{PrintObjectHeader} (\hyperlink{structobject__struct}{object} $\ast$obj)
+\begin{DoxyCompactList}\small\item\em prints the info from a loaded object header \item\end{DoxyCompactList}\item 
+\hyperlink{structattribute__struct}{attribute} $\ast$ \hyperlink{dxFileReader_8h_aed4f315fa0672a30cc2576f51382d4a3}{GetAttribute} (\hyperlink{structobject__struct}{object} $\ast$obj, char $\ast$key)
+\begin{DoxyCompactList}\small\item\em Gets an attribute if the object has such an attribute. \item\end{DoxyCompactList}\item 
+\hyperlink{structobject__struct}{object} $\ast$ \hyperlink{dxFileReader_8h_af80f27fb5a20e7d3fb964b653502e1d4}{GetObject} (\hyperlink{structdxFile__struct}{dxFile} $\ast$file, char $\ast$name)
+\begin{DoxyCompactList}\small\item\em Gets an object by name if it exists. \item\end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Reads an OpenDX data file. This library implements a light weight reader for the native OpenDX data format. The complete standard is not necessarily implemented.
+
+\begin{DoxyAuthor}{Author}
+David J. Warne (\href{mailto:david.warne@qut.edu.au}{\tt david.warne@qut.edu.au}) 
+
+High Performance Computing and Research Support 
+
+Queensland University of Technology 
+\end{DoxyAuthor}
+
+
+\subsection{Function Documentation}
+\hypertarget{dxFileReader_8h_ad44596584aaad7e4601f67126fb0d4fe}{
+\index{dxFileReader.h@{dxFileReader.h}!DX\_\-LoadAll@{DX\_\-LoadAll}}
+\index{DX\_\-LoadAll@{DX\_\-LoadAll}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{DX\_\-LoadAll}]{\setlength{\rightskip}{0pt plus 5cm}int DX\_\-LoadAll ({\bf dxFile} $\ast$ {\em file})}}
+\label{dxFileReader_8h_ad44596584aaad7e4601f67126fb0d4fe}
+
+
+loads objects into memory works through each object header and import data appropiately making links were appropriate. 
+\begin{DoxyParams}{Parameters}
+\item[{\em file}]the file to load data from \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS on compeletion, otherwise an appropriate error message 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_ad9f4f70b8443f4636d3e17a338f6249a}{
+\index{dxFileReader.h@{dxFileReader.h}!DX\_\-Open@{DX\_\-Open}}
+\index{DX\_\-Open@{DX\_\-Open}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{DX\_\-Open}]{\setlength{\rightskip}{0pt plus 5cm}int DX\_\-Open ({\bf dxFile} $\ast$ {\em file}, \/  const char $\ast$ {\em filename})}}
+\label{dxFileReader_8h_ad9f4f70b8443f4636d3e17a338f6249a}
+
+
+Opens an OpenDX file. reads through the file finding all objects and populating object descriptors. No data is actually loaded into memory. 
+\begin{DoxyParams}{Parameters}
+\item[{\em filename}]The name of the OpenDX file \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS on compeletion, otherwise an appropriate error message 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_aed4f315fa0672a30cc2576f51382d4a3}{
+\index{dxFileReader.h@{dxFileReader.h}!GetAttribute@{GetAttribute}}
+\index{GetAttribute@{GetAttribute}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{GetAttribute}]{\setlength{\rightskip}{0pt plus 5cm}{\bf attribute}$\ast$ GetAttribute ({\bf object} $\ast$ {\em obj}, \/  char $\ast$ {\em key})}}
+\label{dxFileReader_8h_aed4f315fa0672a30cc2576f51382d4a3}
+
+
+Gets an attribute if the object has such an attribute. 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]the object to get the attribute of \item[{\em key}]the name of the desired attribute \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+a pointer to the attribute, NULL if the object does not have such an attribute 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_af80f27fb5a20e7d3fb964b653502e1d4}{
+\index{dxFileReader.h@{dxFileReader.h}!GetObject@{GetObject}}
+\index{GetObject@{GetObject}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{GetObject}]{\setlength{\rightskip}{0pt plus 5cm}{\bf object}$\ast$ GetObject ({\bf dxFile} $\ast$ {\em file}, \/  char $\ast$ {\em name})}}
+\label{dxFileReader_8h_af80f27fb5a20e7d3fb964b653502e1d4}
+
+
+Gets an object by name if it exists. 
+\begin{DoxyParams}{Parameters}
+\item[{\em file}]the openDX file object \item[{\em name}]the key name to search for \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+a pointer to the object, NULL if the object does not exist 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_a2e4c4fdcab3e9aee43c33a05903d4e37}{
+\index{dxFileReader.h@{dxFileReader.h}!LoadArrayData@{LoadArrayData}}
+\index{LoadArrayData@{LoadArrayData}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{LoadArrayData}]{\setlength{\rightskip}{0pt plus 5cm}int LoadArrayData ({\bf object} $\ast$ {\em obj}, \/  {\bf dxFile} $\ast$ {\em file})}}
+\label{dxFileReader_8h_a2e4c4fdcab3e9aee43c33a05903d4e37}
+
+
+loads array data allocates memory and loads data array into memory 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]the pointer which wraps the array object \item[{\em file}]the dxFile structure, assumes the stream cursor is located just after the array header. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS on compeletion, otherwise an appropriate error message 
+\end{DoxyReturn}
+\begin{Desc}
+\item[\hyperlink{todo__todo000001}{Todo}]Currently only supports data mode follows \end{Desc}
+\hypertarget{dxFileReader_8h_ab7ed8b7ca41b3b03a8cc0eb2c86b7192}{
+\index{dxFileReader.h@{dxFileReader.h}!LoadFieldData@{LoadFieldData}}
+\index{LoadFieldData@{LoadFieldData}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{LoadFieldData}]{\setlength{\rightskip}{0pt plus 5cm}int LoadFieldData ({\bf object} $\ast$ {\em obj}, \/  {\bf dxFile} $\ast$ {\em file})}}
+\label{dxFileReader_8h_ab7ed8b7ca41b3b03a8cc0eb2c86b7192}
+
+
+load field data locates the components it the object array, assigns an alias to each and stores the pointer to associate the objects with the field. 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]the object pointer which wraps the field. \item[{\em file}]the dxFile structure, assumes the stream cursor is located just after the field header. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS on compeletion, otherwise an appropriate error message 
+\end{DoxyReturn}
+\begin{DoxyNote}{Note}
+This loader assumes all references are in the same dx file 
+\end{DoxyNote}
+\hypertarget{dxFileReader_8h_af13e9b313942c36aabd23b835571c7ab}{
+\index{dxFileReader.h@{dxFileReader.h}!LoadGridConnectionsData@{LoadGridConnectionsData}}
+\index{LoadGridConnectionsData@{LoadGridConnectionsData}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{LoadGridConnectionsData}]{\setlength{\rightskip}{0pt plus 5cm}int LoadGridConnectionsData ({\bf object} $\ast$ {\em obj}, \/  {\bf dxFile} $\ast$ {\em file})}}
+\label{dxFileReader_8h_af13e9b313942c36aabd23b835571c7ab}
+
+
+loads array data allocates memory and loads data array into memory 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]the pointer which wraps the array object \item[{\em file}]the dxFile structure, assumes the stream cursor is located just after the array header. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS on compeletion, otherwise an appropriate error message 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_a5d0c87faf09d2252bdedcae8e8953fe2}{
+\index{dxFileReader.h@{dxFileReader.h}!LoadGridPositionsData@{LoadGridPositionsData}}
+\index{LoadGridPositionsData@{LoadGridPositionsData}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{LoadGridPositionsData}]{\setlength{\rightskip}{0pt plus 5cm}int LoadGridPositionsData ({\bf object} $\ast$ {\em obj}, \/  {\bf dxFile} $\ast$ {\em file})}}
+\label{dxFileReader_8h_a5d0c87faf09d2252bdedcae8e8953fe2}
+
+
+loads girdpositions data allocates memory and loads gridpositions into memory 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]the pointer which wraps the array object \item[{\em file}]the dxFile structure, assumes the stream cursor is located just after the array header. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS on compeletion, otherwise an appropriate error message 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_a2af7fadcb8a1d4c2d4a02f62095b978a}{
+\index{dxFileReader.h@{dxFileReader.h}!LoadGroupData@{LoadGroupData}}
+\index{LoadGroupData@{LoadGroupData}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{LoadGroupData}]{\setlength{\rightskip}{0pt plus 5cm}int LoadGroupData ({\bf object} $\ast$ {\em obj}, \/  {\bf dxFile} $\ast$ {\em file})}}
+\label{dxFileReader_8h_a2af7fadcb8a1d4c2d4a02f62095b978a}
+
+
+loads group data locates the members it the object array, assigns an alias to each and stores the pointer to associate the objects with the group. 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]the object pointer which wraps the group. \item[{\em file}]the dxFile structure, assumes the stream cursor is located just after the group header. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS on compeletion, otherwise an appropriate error message 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_aefc3635312732236a3163d47a1126106}{
+\index{dxFileReader.h@{dxFileReader.h}!LoadObjectData@{LoadObjectData}}
+\index{LoadObjectData@{LoadObjectData}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{LoadObjectData}]{\setlength{\rightskip}{0pt plus 5cm}int LoadObjectData ({\bf object} $\ast$ {\em obj}, \/  {\bf dxFile} $\ast$ {\em file})}}
+\label{dxFileReader_8h_aefc3635312732236a3163d47a1126106}
+
+
+loads object data loads data via appropriate sub-\/function, then imports attributes and asserts isLoaded flag. 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]a pointer to the object to load \item[{\em file}]the dxFile to load from \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS on compeletion, otherwise an appropriate error message 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_a42f3f9c90a998085c2f9fb24e79f4166}{
+\index{dxFileReader.h@{dxFileReader.h}!LoadSeriesData@{LoadSeriesData}}
+\index{LoadSeriesData@{LoadSeriesData}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{LoadSeriesData}]{\setlength{\rightskip}{0pt plus 5cm}int LoadSeriesData ({\bf object} $\ast$ {\em obj}, \/  {\bf dxFile} $\ast$ {\em file})}}
+\label{dxFileReader_8h_a42f3f9c90a998085c2f9fb24e79f4166}
+
+
+loads series data allocates memory and loads series into memory 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]the pointer which wraps the array object \item[{\em file}]the dxFile structure, assumes the stream cursor is located just after the array header. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS on compeletion, otherwise an appropriate error message 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_a480d78f28f6859cd2862a6d6dd262159}{
+\index{dxFileReader.h@{dxFileReader.h}!ParseArrayObjectHeader@{ParseArrayObjectHeader}}
+\index{ParseArrayObjectHeader@{ParseArrayObjectHeader}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{ParseArrayObjectHeader}]{\setlength{\rightskip}{0pt plus 5cm}int ParseArrayObjectHeader ({\bf object} $\ast$ {\em obj}, \/  char $\ast$ {\em header})}}
+\label{dxFileReader_8h_a480d78f28f6859cd2862a6d6dd262159}
+
+
+Parses an array object header. 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]a pointer to the object wrapper that will hold this array \item[{\em header}]the pointer to header line starting from type \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS if successfully complete, otherwise an appropriate error code 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_a21a16699ec001047869342f0066a1688}{
+\index{dxFileReader.h@{dxFileReader.h}!ParseFieldObjectHeader@{ParseFieldObjectHeader}}
+\index{ParseFieldObjectHeader@{ParseFieldObjectHeader}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{ParseFieldObjectHeader}]{\setlength{\rightskip}{0pt plus 5cm}int ParseFieldObjectHeader ({\bf object} $\ast$ {\em obj}, \/  char $\ast$ {\em header})}}
+\label{dxFileReader_8h_a21a16699ec001047869342f0066a1688}
+
+
+Parses a field object header. 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]a pointer to the object wrapper that will hold this field \item[{\em header}]the pointer to header line starting from type \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS if successfully complete, otherwise an appropriate error code 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_aa20dc09c39ecab0142f3d60c1c6f6ab2}{
+\index{dxFileReader.h@{dxFileReader.h}!ParseGridConnectionsObjectHeader@{ParseGridConnectionsObjectHeader}}
+\index{ParseGridConnectionsObjectHeader@{ParseGridConnectionsObjectHeader}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{ParseGridConnectionsObjectHeader}]{\setlength{\rightskip}{0pt plus 5cm}int ParseGridConnectionsObjectHeader ({\bf object} $\ast$ {\em obj}, \/  char $\ast$ {\em header})}}
+\label{dxFileReader_8h_aa20dc09c39ecab0142f3d60c1c6f6ab2}
+
+
+Parses gridconnections object header. 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]a pointer to the object wrapper that will hold this gridconnections object \item[{\em header}]the pointer to header line starting from type \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS if successfully complete, otherwise an appropriate error code 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_a74684f74bd864459d5432aad53e23076}{
+\index{dxFileReader.h@{dxFileReader.h}!ParseGridPositionsObjectHeader@{ParseGridPositionsObjectHeader}}
+\index{ParseGridPositionsObjectHeader@{ParseGridPositionsObjectHeader}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{ParseGridPositionsObjectHeader}]{\setlength{\rightskip}{0pt plus 5cm}int ParseGridPositionsObjectHeader ({\bf object} $\ast$ {\em obj}, \/  char $\ast$ {\em header})}}
+\label{dxFileReader_8h_a74684f74bd864459d5432aad53e23076}
+
+
+Parses gridpositions object header. 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]a pointer to the object wrapper that will hold this gridpositions object \item[{\em header}]the pointer to header line starting from type \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS if successfully complete, otherwise an appropriate error code 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_af338e737afc816874212346e5c3f3b83}{
+\index{dxFileReader.h@{dxFileReader.h}!ParseGroupObjectHeader@{ParseGroupObjectHeader}}
+\index{ParseGroupObjectHeader@{ParseGroupObjectHeader}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{ParseGroupObjectHeader}]{\setlength{\rightskip}{0pt plus 5cm}int ParseGroupObjectHeader ({\bf object} $\ast$ {\em obj}, \/  char $\ast$ {\em header})}}
+\label{dxFileReader_8h_af338e737afc816874212346e5c3f3b83}
+
+
+Parses a group object header. 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]a pointer to the object wrapper that will hold this group \item[{\em header}]the pointer to header line starting from type \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS if successfully complete, otherwise an appropriate error code 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_ae63bdd1ebe58fab7d456329d2d99b951}{
+\index{dxFileReader.h@{dxFileReader.h}!ParseObjectHeader@{ParseObjectHeader}}
+\index{ParseObjectHeader@{ParseObjectHeader}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{ParseObjectHeader}]{\setlength{\rightskip}{0pt plus 5cm}int ParseObjectHeader ({\bf object} $\ast$ {\em obj}, \/  char $\ast$ {\em header})}}
+\label{dxFileReader_8h_ae63bdd1ebe58fab7d456329d2d99b951}
+
+
+Parses an object header. This just tests what type of object it is and differs to an object specific parser. On successful execution, the object header information will be set. 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]a pointer to an object wrapper \item[{\em header}]the header text line \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS or an appropiate error code 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_a69b8fd1563c3479d7df29f98eff8f1b1}{
+\index{dxFileReader.h@{dxFileReader.h}!ParseSeriesObjectHeader@{ParseSeriesObjectHeader}}
+\index{ParseSeriesObjectHeader@{ParseSeriesObjectHeader}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{ParseSeriesObjectHeader}]{\setlength{\rightskip}{0pt plus 5cm}int ParseSeriesObjectHeader ({\bf object} $\ast$ {\em obj}, \/  char $\ast$ {\em header})}}
+\label{dxFileReader_8h_a69b8fd1563c3479d7df29f98eff8f1b1}
+
+
+Parses series object header. 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]a pointer to the object wrapper that will hold this series \item[{\em header}]the pointer to header line starting from type \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DX\_\-SUCCESS if successfully complete, otherwise an appropriate error code 
+\end{DoxyReturn}
+\hypertarget{dxFileReader_8h_af9aac18ecc63537ffb93480162f4434b}{
+\index{dxFileReader.h@{dxFileReader.h}!PrintObjectHeader@{PrintObjectHeader}}
+\index{PrintObjectHeader@{PrintObjectHeader}!dxFileReader.h@{dxFileReader.h}}
+\subsubsection[{PrintObjectHeader}]{\setlength{\rightskip}{0pt plus 5cm}void PrintObjectHeader ({\bf object} $\ast$ {\em obj})}}
+\label{dxFileReader_8h_af9aac18ecc63537ffb93480162f4434b}
+
+
+prints the info from a loaded object header this function is primarily for debugging purposes 
+\begin{DoxyParams}{Parameters}
+\item[{\em obj}]a pointer to the object header wrapper \end{DoxyParams}
