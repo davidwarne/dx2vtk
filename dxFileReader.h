@@ -178,6 +178,7 @@ struct dxFile_struct{
 // function prototypes
 int DX_Open(dxFile *file,const char * filename);
 int DX_LoadAll(dxFile *file);
+int DX_Close(dxFile *file);
 int ParseObjectHeader(object *obj,  char* header);
 
 int ParseArrayObjectHeader(object *obj,char *header);
@@ -195,6 +196,7 @@ int LoadGroupData(object *obj,dxFile *file);
 int LoadGridPositionsData(object *obj, dxFile *file);
 int LoadGridConnectionsData(object *obj, dxFile *file);
 int LoadSeriesData(object *obj, dxFile *file);
+int LoadAttributes(object *obj,dxFile *file);
 
 void PrintObjectHeader(object *obj);
 attribute * GetAttribute(object *obj,char * key);

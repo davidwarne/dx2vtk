@@ -7,8 +7,8 @@ CC = gcc
 COPTS = -O2
 SRC = dxFileReader.c vtkFileWriter.c dx2vtk.c
 OBJS = $(SRC:.c=.o)
-INC = -I/usr/local/include/ioutils
-LIB = -lm -L/usr/local/lib/ioutils -lioutils
+INC = -I./ioutils
+LIB = -lm -L./ioutils -lioutils
 BINARY = dx2vtk
 
 all:
