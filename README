@@ -4,6 +4,14 @@ Description:
 ------------
 An OpenDX to VTK Legacy format version 4.2 file converter.
 
+Build Instructions:
+-------------------
+1) cd ioutils/
+2) make
+3) cd ../
+4) make
+5) export LD_LIBRARY_PATH=./ioutils/:$LD_LIBRARY_PATH
+
 Author Information:
 -------------------
     Name: David J. Warne
