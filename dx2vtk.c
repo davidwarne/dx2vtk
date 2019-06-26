@@ -479,7 +479,7 @@ int dxFile2vtkDataFiles(dxFile *dxf, vtkDataFile ***vtkf, int * numFiles,char ty
         vtkFiles[i]->dataType = type;
         vtkFiles[i]->pointdata->numScalars = 0;
         vtkFiles[i]->pointdata->numVectors = 0;
-        vtkFiles[i]->celldata->numVectors = 0;
+        vtkFiles[i]->celldata->numScalars = 0;
         vtkFiles[i]->celldata->numVectors = 0;
 #ifdef DEBUG
         printf("VTK file header [file %d of %d]\n",i,numFields);
@@ -492,17 +492,24 @@ int dxFile2vtkDataFiles(dxFile *dxf, vtkDataFile ***vtkf, int * numFiles,char ty
             return rc;
         }
         
-        // allocate memory for pointt data
+        // allocate memory for pointt and cell data
         vtkFiles[i]->pointdata->scalar_data = (scalar *)malloc((vtkFiles[i]->pointdata->numScalars)*sizeof(scalar));
         vtkFiles[i]->pointdata->vector_data = (vector *)malloc((vtkFiles[i]->pointdata->numVectors)*sizeof(vector));
         if (vtkFiles[i]->pointdata->scalar_data == NULL || vtkFiles[i]->pointdata->vector_data == NULL)
         {
             return DX_MEMORY_ERROR;
         }
+        vtkFiles[i]->celldata->scalar_data = (scalar *)malloc((vtkFiles[i]->celldata->numScalars)*sizeof(scalar));
+        vtkFiles[i]->celldata->vector_data = (vector *)malloc((vtkFiles[i]->celldata->numVectors)*sizeof(vector));
+        if (vtkFiles[i]->celldata->scalar_data == NULL || vtkFiles[i]->celldata->vector_data == NULL)
+        {
+            return DX_MEMORY_ERROR;
+        }
+
         // reset to zero as we now use these as an index... a bit of a hack
         vtkFiles[i]->pointdata->numScalars = 0;
         vtkFiles[i]->pointdata->numVectors = 0;
-        vtkFiles[i]->celldata->numVectors = 0;
+        vtkFiles[i]->celldata->numScalars = 0;
         vtkFiles[i]->celldata->numVectors = 0;
         vtkFiles[i]->pointdata->size = 0;
         vtkFiles[i]->celldata->size = 0;
@@ -533,8 +540,8 @@ int dxFile2vtkDataFiles(dxFile *dxf, vtkDataFile ***vtkf, int * numFiles,char ty
             }
         }
     }
-
-    
+//
+//    
     *vtkf = vtkFiles;
     *numFiles = numFields;
 
